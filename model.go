@@ -28,12 +28,15 @@ func newModel() *Model {
 
 	appList.Title = "Apps"
 	appList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
+	appList.Styles.Title = styles.Title
+
 	appList.SetShowHelp(false)
 
 	selectedApp := appList.SelectedItem().FilterValue()
 
 	templateList.Title = selectedApp + " Templates"
 	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
+	templateList.Styles.Title = styles.Title
 	templateList.SetShowHelp(false)
 	templateList.SetItems(GetTemplateListItems(selectedApp))
 
