@@ -22,6 +22,8 @@ type Model struct {
 	keys      KeyMap
 }
 
+type updateTemplatesMsg App
+
 func newModel() *Model {
 	appList := list.New(GetAppListItems(), AppDelegate{styles}, 0, 0)
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
@@ -29,8 +31,8 @@ func newModel() *Model {
 	appList.Title = "Apps"
 	appList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
 	appList.Styles.Title = styles.Title
-
 	appList.SetShowHelp(false)
+	appList.SetShowFilter(false)
 
 	selectedApp := appList.SelectedItem().FilterValue()
 
@@ -38,6 +40,7 @@ func newModel() *Model {
 	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
 	templateList.Styles.Title = styles.Title
 	templateList.SetShowHelp(false)
+	templateList.SetShowFilter(false)
 	templateList.SetItems(GetTemplateListItems(selectedApp))
 
 	return &Model{
@@ -67,6 +70,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.apps.SetSize(msg.Width, msg.Height-1)
 		m.templates.SetSize(msg.Width, msg.Height-1)
 		return m, nil
+
+	case updateTemplatesMsg:
+		return m, m.getTemplates()
 
 	case tea.KeyMsg:
 		switch msg.String() {

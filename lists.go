@@ -23,12 +23,19 @@ type App struct {
 }
 
 func (a App) FilterValue() string { return a.Name }
+func (a App) Test() App           { return a }
 
 type AppDelegate struct{ styles ListStyles }
 
-func (a AppDelegate) Height() int                               { return 1 }
-func (a AppDelegate) Spacing() int                              { return 0 }
-func (a AppDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (a AppDelegate) Height() int  { return 1 }
+func (a AppDelegate) Spacing() int { return 0 }
+
+func (a AppDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
+	return func() tea.Msg {
+		return updateTemplatesMsg(m.SelectedItem().(App))
+	}
+}
+
 func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
 	f, ok := item.(App)
 	if !ok {
