@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"gopkg.in/yaml.v3"
 )
 
@@ -116,4 +117,26 @@ func GetTemplateListItems(appName string) []list.Item {
 	}
 
 	return templateListItems
+}
+
+func newLists() (list.Model, list.Model) {
+	appList := list.New(GetAppListItems(), AppDelegate{styles}, 0, 0)
+	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
+
+	appList.Title = "Apps"
+	appList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
+	appList.Styles.Title = styles.Title
+	appList.SetShowHelp(false)
+	appList.SetShowFilter(false)
+
+	selectedApp := appList.SelectedItem().FilterValue()
+
+	templateList.Title = selectedApp + " Templates"
+	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
+	templateList.Styles.Title = styles.Title
+	templateList.SetShowHelp(false)
+	templateList.SetShowFilter(false)
+	templateList.SetItems(GetTemplateListItems(selectedApp))
+
+	return appList, templateList
 }
