@@ -4,25 +4,30 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
-type state int
+type Pane int
 
 const (
-	appState state = iota
-	templateState
+	appPane Pane = iota
+	templatePane
 )
 
 type Model struct {
-	help      help.Model
-	apps      list.Model
-	templates list.Model
-	state     state
-	keys      KeyMap
+	help       help.Model
+	apps       list.Model
+	templates  list.Model
+	pane       Pane
+	keys       KeyMap
+	forms      map[Pane]*huh.Form
+	formActive bool
 }
 
 type updateTemplatesMsg App
+
+type toggleFormMsg bool
 
 func newModel() *Model {
 	appList := list.New(GetAppListItems(), AppDelegate{styles}, 0, 0)
@@ -43,12 +48,16 @@ func newModel() *Model {
 	templateList.SetShowFilter(false)
 	templateList.SetItems(GetTemplateListItems(selectedApp))
 
+	forms := newForms()
+
 	return &Model{
-		keys:      DefaultKeyMap,
-		help:      help.New(),
-		state:     appState,
-		apps:      appList,
-		templates: templateList,
+		keys:       DefaultKeyMap,
+		help:       help.New(),
+		pane:       appPane,
+		apps:       appList,
+		templates:  templateList,
+		forms:      forms,
+		formActive: false,
 	}
 }
 
@@ -62,8 +71,28 @@ func (m *Model) getTemplates() tea.Cmd {
 	return m.templates.SetItems(GetTemplateListItems(selectedApp))
 }
 
+func (m *Model) updatePane() {
+	if !m.formActive {
+		switch m.pane {
+		case appPane:
+			m.pane = templatePane
+		case templatePane:
+			m.pane = appPane
+		}
+	}
+}
+
+func (m *Model) triggerForm() tea.Cmd {
+	if !m.formActive {
+		m.formActive = true
+		return m.forms[m.pane].Init()
+	}
+	return nil
+}
+
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -77,30 +106,56 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab":
-			if m.state == appState {
-				m.state = templateState
-				return m, nil
-			} else {
-				m.state = appState
-				return m, nil
-			}
+			m.updatePane()
+		case "n":
+			return m, m.triggerForm()
 		}
 	}
 
-	if m.state == templateState {
-		m.templates, cmd = m.templates.Update(msg)
-		return m, cmd
+	if m.formActive {
+		form, cmd := m.forms[m.pane].Update(msg)
+		if f, ok := form.(*huh.Form); ok {
+			m.forms[m.pane] = f
+			cmds = append(cmds, cmd)
+		}
+
+		if m.forms[m.pane].State == huh.StateCompleted {
+			m.formActive = false
+			resetFormValues()
+			m.forms = newForms()
+		}
+
+		return m, tea.Batch(cmds...)
 	}
 
-	m.apps, cmd = m.apps.Update(msg)
+	if m.pane == appPane {
+		m.apps, cmd = m.apps.Update(msg)
+		cmds = append(cmds, cmd)
+	}
 
-	return m, cmd
+	if m.pane == templatePane {
+		m.templates, cmd = m.templates.Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
+
+	appView := m.apps.View()
+	if m.formActive && m.pane == appPane {
+		appView = m.forms[m.pane].View()
+	}
+
+	templatesView := m.templates.View()
+	if m.formActive && m.pane == templatePane {
+		templatesView = m.forms[m.pane].View()
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.JoinHorizontal(lipgloss.Left, m.apps.View(), m.templates.View()),
+		lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView),
 		m.help.View(m.keys),
 	)
 }
