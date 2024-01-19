@@ -43,6 +43,10 @@ func GetApps() []list.Item {
 		appListItems = append(appListItems, list.Item(app))
 	}
 
+	slices.SortFunc[[]list.Item, list.Item](appListItems, func(a, b list.Item) int {
+		return cmp.Compare(a.(App).Name, b.(App).Name)
+	})
+
 	return appListItems
 }
 
