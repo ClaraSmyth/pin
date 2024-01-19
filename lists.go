@@ -23,6 +23,15 @@ type App struct {
 	Active   bool   `yaml:"active"`
 }
 
+var defaultApp = App{
+	Name:     "userdefined",
+	Path:     "userdefined",
+	Template: "empty",
+	Hook:     "",
+	Backup:   "active app config file",
+	Active:   false,
+}
+
 func (a App) FilterValue() string { return a.Name }
 func (a App) Test() App           { return a }
 
@@ -63,6 +72,23 @@ func GetAppListItems() []list.Item {
 	if err != nil {
 		panic(err)
 	}
+
+	//dirs, err := os.ReadDir("./config/templates/")
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	// If apps from config file and number of app dirs dont align create new default apps for those missing from config file
+	//if len(apps) != len(dirs) {
+	//	newApp := []App{}
+
+	//	for _, dir := range dirs {
+	//		dirName := strings.ToLower(dir.Name())
+	//		if _, ok := apps[dirName]; !ok {
+	//			apps[dirName] = App{}
+	//		}
+	//	}
+	//}
 
 	var appListItems []list.Item
 
@@ -113,8 +139,8 @@ func UpdateAppList(newApp App, appList []list.Item) tea.Cmd {
 // Template List
 
 type Template struct {
-	Name string
-	Path string
+	Name     string
+	Filename string
 }
 
 func (t Template) FilterValue() string { return t.Name }
@@ -138,36 +164,6 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 	fmt.Fprint(w, t.styles.Unselected.Render("  "+template.Name))
 }
 
-func GetTemplateListItems(appName string) []list.Item {
-	path := "./config/templates/" + strings.ToLower(appName)
-
-	files, err := os.ReadDir(path)
-	if err != nil {
-		panic(err)
-	}
-
-	var templateListItems []list.Item
-
-	for _, file := range files {
-		templateListItems = append(templateListItems, list.Item(Template{Name: file.Name(), Path: file.Name()}))
-	}
-
-	return templateListItems
-}
-
-func UpdateTemplateList(app App, templateName string) tea.Cmd {
-	f, err := os.Create("./config/templates/" + strings.ToLower(app.Name) + "/" + strings.ToLower(templateName))
-	if err != nil {
-		panic(err)
-	}
-
-	defer f.Close()
-
-	return func() tea.Msg {
-		return updateTemplatesMsg(app)
-	}
-}
-
 func newLists() (list.Model, list.Model) {
 	appList := list.New(GetAppListItems(), AppDelegate{styles}, 0, 0)
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
@@ -185,7 +181,7 @@ func newLists() (list.Model, list.Model) {
 	templateList.Styles.Title = styles.Title
 	templateList.SetShowHelp(false)
 	templateList.SetShowFilter(false)
-	templateList.SetItems(GetTemplateListItems(selectedApp))
+	templateList.SetItems(GetTemplates(selectedApp))
 
 	return appList, templateList
 }

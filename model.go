@@ -19,6 +19,14 @@ const (
 	templatePane
 )
 
+type FormAction int
+
+const (
+	formActionCreate FormAction = iota
+	formActionEdit
+	formActionDelete
+)
+
 type Model struct {
 	help             help.Model
 	apps             list.Model
@@ -27,6 +35,7 @@ type Model struct {
 	keys             KeyMap
 	form             *huh.Form
 	formActive       bool
+	formAction       FormAction
 	filepicker       filepicker.Model
 	filepickerActive bool
 	selectedFile     string
@@ -55,43 +64,72 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) getTemplates() tea.Cmd {
-	selectedApp := m.apps.SelectedItem().(Template).Name
-	return m.templates.SetItems(GetTemplateListItems(selectedApp))
+func (m *Model) updateTemplates() tea.Cmd {
+	selectedApp := m.apps.SelectedItem().(App).Name
+	return m.templates.SetItems(GetTemplates(selectedApp))
 }
 
 func (m *Model) updatePane() {
-	if !m.formActive {
-		switch m.pane {
-		case appPane:
-			m.pane = templatePane
-		case templatePane:
-			m.pane = appPane
-		}
-	}
-}
-
-func (m *Model) setFormValues(x interface{}) {
-	switch v := x.(type) {
-	case App:
-		formName = v.Name
-		formHook = v.Hook
-		formApply = false
-	case Template:
-		formName = v.Name
-		formApply = false
-	default:
-		formName = ""
-		formHook = ""
-		formApply = false
-		m.selectedFile = ""
-	}
-}
-
-func (m *Model) createNewFormItem() tea.Cmd {
 	switch m.pane {
 	case appPane:
+		m.pane = templatePane
+	case templatePane:
+		m.pane = appPane
+	}
 
+}
+
+func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
+
+	// Set form to active
+	m.formActive = true
+
+	// Reset Form Values
+	formName = ""
+	formHook = ""
+	formApply = false
+	m.selectedFile = ""
+
+	switch formAction {
+	case formActionCreate:
+		m.formAction = formAction
+		m.form = newForm(m.pane)
+		return m, m.form.Init()
+
+	case formActionEdit:
+		m.formAction = formAction
+
+		if m.pane == appPane {
+			if len(m.apps.Items()) == 0 {
+				m.formActive = false
+				return m, nil
+			}
+			currApp := m.apps.SelectedItem().(App)
+			formName = currApp.Name
+			formHook = currApp.Hook
+			m.selectedFile = currApp.Path
+		}
+
+		if m.pane == templatePane {
+			if len(m.templates.Items()) == 0 {
+				m.formActive = false
+				return m, nil
+			}
+			currTemplate := m.templates.SelectedItem().(Template)
+			formName = currTemplate.Name
+		}
+
+		m.form = newForm(m.pane)
+		return m, m.form.Init()
+
+	default:
+		return m, nil
+	}
+}
+
+func (m *Model) handleFormSubmit() tea.Cmd {
+	switch m.pane {
+	case appPane:
 		newApp := App{
 			Name:     m.form.GetString("name"),
 			Path:     m.selectedFile,
@@ -104,11 +142,19 @@ func (m *Model) createNewFormItem() tea.Cmd {
 		return UpdateAppList(newApp, m.apps.Items())
 
 	case templatePane:
-		return UpdateTemplateList(m.apps.SelectedItem().(App), m.form.GetString("name"))
+		switch m.formAction {
+		case formActionCreate:
+			return CreateTemplate(m.apps.SelectedItem().(App), m.form.GetString("name"))
 
-	default:
-		return nil
+		case formActionEdit:
+			return EditTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Filename, m.form.GetString("name"))
+
+		case formActionDelete:
+			return DeleteTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Filename)
+		}
 	}
+
+	return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -123,7 +169,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case updateTemplatesMsg:
-		return m, m.getTemplates()
+		return m, m.updateTemplates()
 
 	case updateAppListMsg:
 		return m, m.apps.SetItems(msg)
@@ -131,22 +177,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab":
-			m.updatePane()
+			if !m.formActive {
+				m.updatePane()
+			}
 		case "n":
 			if !m.formActive {
-				m.formActive = true
-				m.setFormValues("reset")
-				m.form = newForm(m.pane)
-				return m, m.form.Init()
+				return m.triggerForm(formActionCreate)
 			}
 		case "e":
 			if !m.formActive {
-				m.formActive = true
-				currApp := m.apps.SelectedItem().(App)
-				m.setFormValues(currApp)
-				m.selectedFile = currApp.Path
-				m.form = newForm(m.pane)
-				return m, m.form.Init()
+				return m.triggerForm(formActionEdit)
 			}
 		}
 	}
@@ -159,7 +199,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedFile = path
 				m.formActive = false
 				m.filepickerActive = false
-				return m, m.createNewFormItem()
+				return m, m.handleFormSubmit()
 			}
 
 			return m, cmd
@@ -190,7 +230,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			} else {
 				m.formActive = false
-				cmds = append(cmds, m.createNewFormItem())
+				cmds = append(cmds, m.handleFormSubmit())
 			}
 		}
 
