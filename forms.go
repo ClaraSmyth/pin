@@ -52,3 +52,14 @@ func newForm(pane Pane) *huh.Form {
 		return nil
 	}
 }
+
+func deleteForm() *huh.Form {
+	return huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Key("delete").
+				Title("Are you sure?").
+				Value(&formApply),
+		),
+	).WithShowHelp(false).WithWidth(20)
+}

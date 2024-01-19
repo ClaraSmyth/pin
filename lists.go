@@ -3,13 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
-	"os"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"gopkg.in/yaml.v3"
 )
 
 // App List
@@ -60,82 +57,6 @@ func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 	fmt.Fprint(w, a.styles.Unselected.Render("  "+f.Name))
 }
 
-func GetAppListItems() []list.Item {
-	data, err := os.ReadFile("./config/apps.yaml")
-	if err != nil {
-		panic(err)
-	}
-
-	apps := make(map[string]App)
-
-	err = yaml.Unmarshal([]byte(data), &apps)
-	if err != nil {
-		panic(err)
-	}
-
-	//dirs, err := os.ReadDir("./config/templates/")
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	// If apps from config file and number of app dirs dont align create new default apps for those missing from config file
-	//if len(apps) != len(dirs) {
-	//	newApp := []App{}
-
-	//	for _, dir := range dirs {
-	//		dirName := strings.ToLower(dir.Name())
-	//		if _, ok := apps[dirName]; !ok {
-	//			apps[dirName] = App{}
-	//		}
-	//	}
-	//}
-
-	var appListItems []list.Item
-
-	for _, app := range apps {
-		appListItems = append(appListItems, list.Item(app))
-	}
-
-	return appListItems
-}
-
-func UpdateAppList(newApp App, appList []list.Item) tea.Cmd {
-
-	apps := make(map[string]App)
-
-	for _, item := range appList {
-		app := item.(App)
-		apps[strings.ToLower(app.Name)] = app
-	}
-
-	apps[strings.ToLower(newApp.Name)] = newApp
-
-	d, err := yaml.Marshal(&apps)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.Mkdir(("./config/templates/" + strings.ToLower(newApp.Name)), os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	var appListItems []list.Item
-
-	for _, app := range apps {
-		appListItems = append(appListItems, list.Item(app))
-	}
-
-	return func() tea.Msg {
-		return updateAppListMsg(appListItems)
-	}
-}
-
 // Template List
 
 type Template struct {
@@ -165,7 +86,7 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 }
 
 func newLists() (list.Model, list.Model) {
-	appList := list.New(GetAppListItems(), AppDelegate{styles}, 0, 0)
+	appList := list.New(GetApps(), AppDelegate{styles}, 0, 0)
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
 
 	appList.Title = "Apps"

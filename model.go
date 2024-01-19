@@ -96,10 +96,33 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 		m.form = newForm(m.pane)
 		return m, m.form.Init()
 
+	case formActionDelete:
+		m.formAction = formAction
+
+		switch m.pane {
+		case appPane:
+			if len(m.apps.Items()) == 0 {
+				m.formActive = false
+				m.formAction = formActionCreate
+				return m, nil
+			}
+
+		case templatePane:
+			if len(m.templates.Items()) == 0 {
+				m.formActive = false
+				m.formAction = formActionCreate
+				return m, nil
+			}
+		}
+
+		m.form = deleteForm()
+		return m, m.form.Init()
+
 	case formActionEdit:
 		m.formAction = formAction
 
-		if m.pane == appPane {
+		switch m.pane {
+		case appPane:
 			if len(m.apps.Items()) == 0 {
 				m.formActive = false
 				return m, nil
@@ -108,9 +131,8 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 			formName = currApp.Name
 			formHook = currApp.Hook
 			m.selectedFile = currApp.Path
-		}
 
-		if m.pane == templatePane {
+		case templatePane:
 			if len(m.templates.Items()) == 0 {
 				m.formActive = false
 				return m, nil
@@ -130,6 +152,7 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 func (m *Model) handleFormSubmit() tea.Cmd {
 	switch m.pane {
 	case appPane:
+
 		newApp := App{
 			Name:     m.form.GetString("name"),
 			Path:     m.selectedFile,
@@ -139,7 +162,16 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 			Active:   false,
 		}
 
-		return UpdateAppList(newApp, m.apps.Items())
+		switch m.formAction {
+		case formActionCreate:
+			return CreateApp(newApp, m.apps.Items())
+
+		case formActionEdit:
+			return EditApp(newApp, m.apps.SelectedItem().(App), m.apps.Items())
+
+		case formActionDelete:
+			return DeleteApp(m.apps.SelectedItem().(App), m.apps.Items())
+		}
 
 	case templatePane:
 		switch m.formAction {
@@ -188,6 +220,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.formActive {
 				return m.triggerForm(formActionEdit)
 			}
+		case "x":
+			if !m.formActive {
+				return m.triggerForm(formActionDelete)
+			}
 		}
 	}
 
@@ -212,7 +248,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.form.State == huh.StateCompleted {
-			if m.pane == appPane {
+			if m.pane == appPane && m.formAction != formActionDelete {
 				if !m.filepickerActive {
 					m.filepickerActive = true
 					m.filepicker = filepicker.New()
