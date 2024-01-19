@@ -51,7 +51,6 @@ func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 	fmt.Fprint(w, a.styles.Unselected.Render("  "+f.Name))
 }
 
-// Get the app list
 func GetAppListItems() []list.Item {
 	data, err := os.ReadFile("./config/apps.yaml")
 	if err != nil {
@@ -72,6 +71,43 @@ func GetAppListItems() []list.Item {
 	}
 
 	return appListItems
+}
+
+func UpdateAppList(newApp App, appList []list.Item) tea.Cmd {
+
+	apps := make(map[string]App)
+
+	for _, item := range appList {
+		app := item.(App)
+		apps[strings.ToLower(app.Name)] = app
+	}
+
+	apps[strings.ToLower(newApp.Name)] = newApp
+
+	d, err := yaml.Marshal(&apps)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.Mkdir(("./config/templates/" + strings.ToLower(newApp.Name)), os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
+	var appListItems []list.Item
+
+	for _, app := range apps {
+		appListItems = append(appListItems, list.Item(app))
+	}
+
+	return func() tea.Msg {
+		return updateAppListMsg(appListItems)
+	}
 }
 
 // Template List
@@ -117,6 +153,19 @@ func GetTemplateListItems(appName string) []list.Item {
 	}
 
 	return templateListItems
+}
+
+func UpdateTemplateList(app App, templateName string) tea.Cmd {
+	f, err := os.Create("./config/templates/" + strings.ToLower(app.Name) + "/" + strings.ToLower(templateName))
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	return func() tea.Msg {
+		return updateTemplatesMsg(app)
+	}
 }
 
 func newLists() (list.Model, list.Model) {
