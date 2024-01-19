@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/ClaraSmyth/pin/filepicker"
 	"github.com/charmbracelet/bubbles/help"
@@ -24,7 +25,7 @@ type Model struct {
 	templates        list.Model
 	pane             Pane
 	keys             KeyMap
-	forms            map[Pane]*huh.Form
+	form             *huh.Form
 	formActive       bool
 	filepicker       filepicker.Model
 	filepickerActive bool
@@ -36,17 +37,8 @@ type updateTemplatesMsg App
 
 type updateAppListMsg []list.Item
 
-type toggleFormMsg bool
-
-type resetFormsMsg bool
-
 func newModel() *Model {
 	appList, templateList := newLists()
-	forms := newForms()
-
-	filepicker := filepicker.New()
-	filepicker.CurrentDirectory, _ = os.UserHomeDir()
-	filepicker.ShowHidden = true
 
 	return &Model{
 		keys:             DefaultKeyMap,
@@ -54,11 +46,8 @@ func newModel() *Model {
 		pane:             appPane,
 		apps:             appList,
 		templates:        templateList,
-		forms:            forms,
 		formActive:       false,
-		filepicker:       filepicker,
 		filepickerActive: false,
-		selectedFile:     "",
 	}
 }
 
@@ -67,8 +56,7 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) getTemplates() tea.Cmd {
-	selectedApp := m.apps.SelectedItem().FilterValue()
-	m.templates.Title = selectedApp + " Templates"
+	selectedApp := m.apps.SelectedItem().(Template).Name
 	return m.templates.SetItems(GetTemplateListItems(selectedApp))
 }
 
@@ -83,20 +71,21 @@ func (m *Model) updatePane() {
 	}
 }
 
-func (m *Model) resetFormValues() tea.Cmd {
-	formName = ""
-	formHook = ""
-	formApply = false
-	m.selectedFile = ""
-	m.formActive = false
-	m.filepickerActive = false
-	m.forms = newForms()
-
-	m.filepicker = filepicker.New()
-	m.filepicker.CurrentDirectory, _ = os.UserHomeDir()
-	m.filepicker.ShowHidden = true
-
-	return nil
+func (m *Model) setFormValues(x interface{}) {
+	switch v := x.(type) {
+	case App:
+		formName = v.Name
+		formHook = v.Hook
+		formApply = false
+	case Template:
+		formName = v.Name
+		formApply = false
+	default:
+		formName = ""
+		formHook = ""
+		formApply = false
+		m.selectedFile = ""
+	}
 }
 
 func (m *Model) createNewFormItem() tea.Cmd {
@@ -104,7 +93,7 @@ func (m *Model) createNewFormItem() tea.Cmd {
 	case appPane:
 
 		newApp := App{
-			Name:     m.forms[m.pane].GetString("name"),
+			Name:     m.form.GetString("name"),
 			Path:     m.selectedFile,
 			Template: "Default",
 			Hook:     "Default",
@@ -115,7 +104,7 @@ func (m *Model) createNewFormItem() tea.Cmd {
 		return UpdateAppList(newApp, m.apps.Items())
 
 	case templatePane:
-		return UpdateTemplateList(m.apps.SelectedItem().(App), m.forms[m.pane].GetString("name"))
+		return UpdateTemplateList(m.apps.SelectedItem().(App), m.form.GetString("name"))
 
 	default:
 		return nil
@@ -133,18 +122,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
-	case resetFormsMsg:
-		return m, m.resetFormValues()
-
 	case updateTemplatesMsg:
-		return m, tea.Batch(m.getTemplates(), func() tea.Msg {
-			return resetFormsMsg(true)
-		})
+		return m, m.getTemplates()
 
 	case updateAppListMsg:
-		return m, tea.Batch(m.apps.SetItems(msg), func() tea.Msg {
-			return resetFormsMsg(true)
-		})
+		return m, m.apps.SetItems(msg)
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -153,40 +135,61 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "n":
 			if !m.formActive {
 				m.formActive = true
-				return m, m.forms[m.pane].Init()
+				m.setFormValues("reset")
+				m.form = newForm(m.pane)
+				return m, m.form.Init()
+			}
+		case "e":
+			if !m.formActive {
+				m.formActive = true
+				currApp := m.apps.SelectedItem().(App)
+				m.setFormValues(currApp)
+				m.selectedFile = currApp.Path
+				m.form = newForm(m.pane)
+				return m, m.form.Init()
 			}
 		}
 	}
 
 	if m.formActive {
-
 		if m.filepickerActive {
 			m.filepicker, cmd = m.filepicker.Update(msg)
 
 			if didSelect, path := m.filepicker.DidSelectFile(msg); didSelect {
 				m.selectedFile = path
+				m.formActive = false
+				m.filepickerActive = false
 				return m, m.createNewFormItem()
 			}
 
 			return m, cmd
 		}
 
-		form, cmd := m.forms[m.pane].Update(msg)
+		form, cmd := m.form.Update(msg)
 		if f, ok := form.(*huh.Form); ok {
-			m.forms[m.pane] = f
+			m.form = f
 			cmds = append(cmds, cmd)
 		}
 
-		if m.forms[m.pane].State == huh.StateCompleted {
-
-			if m.pane == appPane && m.selectedFile == "" {
+		if m.form.State == huh.StateCompleted {
+			if m.pane == appPane {
 				if !m.filepickerActive {
 					m.filepickerActive = true
+					m.filepicker = filepicker.New()
+					m.filepicker.CurrentDirectory, _ = os.UserHomeDir()
+					if m.selectedFile != "" {
+						dir := strings.TrimRightFunc(m.selectedFile, func(r rune) bool {
+							return !strings.ContainsRune("/", r)
+						})
+						m.filepicker.CurrentDirectory = dir
+					}
+					m.filepicker.ShowHidden = true
 					m.filepicker.Height = m.height - 6
 					return m, m.filepicker.Init()
 				}
 
 			} else {
+				m.formActive = false
 				cmds = append(cmds, m.createNewFormItem())
 			}
 		}
@@ -209,19 +212,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 
-	filepickerTitle := lipgloss.NewStyle().SetString("Select Config File:").Width(20).Background(lipgloss.Color("#000000")).Render()
-
 	appView := m.apps.View()
 	if m.formActive && m.pane == appPane {
-		appView = m.forms[m.pane].View()
+		appView = m.form.View()
 		if m.filepickerActive {
+			filepickerTitle := lipgloss.NewStyle().SetString("Select Config File:").Width(20).Background(lipgloss.Color("#000000")).Render()
 			appView = lipgloss.JoinVertical(lipgloss.Top, filepickerTitle, "", lipgloss.NewStyle().Width(20).Render(m.filepicker.View()))
 		}
 	}
 
 	templatesView := m.templates.View()
 	if m.formActive && m.pane == templatePane {
-		templatesView = m.forms[m.pane].View()
+		templatesView = m.form.View()
 	}
 
 	return lipgloss.JoinVertical(

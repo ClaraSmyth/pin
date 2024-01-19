@@ -10,51 +10,45 @@ var (
 	formApply bool
 )
 
-func resetFormValues() {
-	formName = ""
-	formHook = ""
-	formApply = false
-}
+func newForm(pane Pane) *huh.Form {
+	switch pane {
 
-func newForms() map[Pane]*huh.Form {
+	case appPane:
+		return huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Key("name").
+					Title("App name").
+					Value(&formName),
 
-	appForm := huh.NewForm(
-		huh.NewGroup(
-			huh.NewInput().
-				Key("name").
-				Title("App name").
-				Value(&formName),
+				huh.NewInput().
+					Key("hook").
+					Title("Hook").
+					Value(&formHook),
 
-			huh.NewInput().
-				Key("hook").
-				Title("Hook").
-				Value(&formHook),
+				huh.NewConfirm().
+					Key("apply").
+					Title("Apply?").
+					Value(&formApply),
+			),
+		).WithShowHelp(false).WithWidth(20)
 
-			huh.NewConfirm().
-				Key("apply").
-				Title("Apply?").
-				Value(&formApply),
-		),
-	).WithShowHelp(false).WithWidth(20)
+	case templatePane:
+		return huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Key("name").
+					Title("Template name").
+					Value(&formName),
 
-	templateForm := huh.NewForm(
-		huh.NewGroup(
-			huh.NewInput().
-				Key("name").
-				Title("Template name").
-				Value(&formName),
+				huh.NewConfirm().
+					Key("apply").
+					Title("Apply?").
+					Value(&formApply),
+			),
+		).WithShowHelp(false).WithWidth(20)
 
-			huh.NewConfirm().
-				Key("apply").
-				Title("Apply?").
-				Value(&formApply),
-		),
-	).WithShowHelp(false).WithWidth(20)
-
-	forms := map[Pane]*huh.Form{
-		appPane:      appForm,
-		templatePane: templateForm,
+	default:
+		return nil
 	}
-
-	return forms
 }
