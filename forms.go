@@ -2,8 +2,11 @@ package main
 
 import (
 	"errors"
+	"slices"
+	"strings"
 	"unicode"
 
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/huh"
 )
 
@@ -14,7 +17,7 @@ var (
 	formApply      bool
 )
 
-func newForm(pane Pane) *huh.Form {
+func newForm(pane Pane, items []list.Item) *huh.Form {
 	switch pane {
 	case appPane:
 		return huh.NewForm(
@@ -30,6 +33,12 @@ func newForm(pane Pane) *huh.Form {
 
 						if !validateFilename(str) {
 							return errors.New("Invalid name!")
+						}
+
+						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
+							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
+						}) {
+							return errors.New("Already Exists!")
 						}
 
 						return nil
@@ -63,6 +72,12 @@ func newForm(pane Pane) *huh.Form {
 
 						if !validateFilename(str) {
 							return errors.New("Invalid name!")
+						}
+
+						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
+							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
+						}) {
+							return errors.New("Already Exists!")
 						}
 
 						return nil

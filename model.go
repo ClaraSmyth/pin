@@ -103,7 +103,15 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	switch formAction {
 	case formActionCreate:
 		m.formAction = formAction
-		m.form = newForm(m.pane)
+
+		switch m.pane {
+		case appPane:
+			m.form = newForm(m.pane, m.apps.Items())
+
+		case templatePane:
+			m.form = newForm(m.pane, m.apps.Items())
+		}
+
 		return m.form.Init()
 
 	case formActionDelete:
@@ -141,6 +149,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			formName = currApp.Name
 			formHook = currApp.Hook
 			m.selectedFile = currApp.Path
+			m.form = newForm(m.pane, m.apps.Items())
 
 		case templatePane:
 			if m.templates.SelectedItem() == nil {
@@ -149,9 +158,9 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			}
 			currTemplate := m.templates.SelectedItem().(Template)
 			formName = currTemplate.Name
+			m.form = newForm(m.pane, m.templates.Items())
 		}
 
-		m.form = newForm(m.pane)
 		return m.form.Init()
 
 	default:
