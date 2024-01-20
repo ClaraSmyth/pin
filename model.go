@@ -65,8 +65,11 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) updateTemplates() tea.Cmd {
-	selectedApp := m.apps.SelectedItem().(App).Name
-	return m.templates.SetItems(GetTemplates(selectedApp))
+	selectedApp := m.apps.SelectedItem()
+	if selectedApp != nil {
+		return m.templates.SetItems(GetTemplates(selectedApp.(App).Name))
+	}
+	return nil
 }
 
 func (m *Model) updatePane() {
@@ -79,7 +82,22 @@ func (m *Model) updatePane() {
 
 }
 
-func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
+func (m *Model) triggerFilepicker() tea.Cmd {
+	m.filepickerActive = true
+	m.filepicker = filepicker.New()
+	m.filepicker.CurrentDirectory, _ = os.UserHomeDir()
+	if m.selectedFile != "" {
+		dir := strings.TrimRightFunc(m.selectedFile, func(r rune) bool {
+			return !strings.ContainsRune("/", r)
+		})
+		m.filepicker.CurrentDirectory = dir
+	}
+	m.filepicker.ShowHidden = true
+	m.filepicker.Height = m.height - 6
+	return m.filepicker.Init()
+}
+
+func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 
 	// Set form to active
 	m.formActive = true
@@ -87,6 +105,7 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 	// Reset Form Values
 	formName = ""
 	formHook = ""
+	formConfig = false
 	formApply = false
 	m.selectedFile = ""
 
@@ -94,7 +113,7 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 	case formActionCreate:
 		m.formAction = formAction
 		m.form = newForm(m.pane)
-		return m, m.form.Init()
+		return m.form.Init()
 
 	case formActionDelete:
 		m.formAction = formAction
@@ -104,19 +123,19 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 			if m.apps.SelectedItem() == nil {
 				m.formActive = false
 				m.formAction = formActionCreate
-				return m, nil
+				return nil
 			}
 
 		case templatePane:
 			if m.templates.SelectedItem() == nil {
 				m.formActive = false
 				m.formAction = formActionCreate
-				return m, nil
+				return nil
 			}
 		}
 
 		m.form = deleteForm()
-		return m, m.form.Init()
+		return m.form.Init()
 
 	case formActionEdit:
 		m.formAction = formAction
@@ -125,7 +144,7 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 		case appPane:
 			if m.apps.SelectedItem() == nil {
 				m.formActive = false
-				return m, nil
+				return nil
 			}
 			currApp := m.apps.SelectedItem().(App)
 			formName = currApp.Name
@@ -135,21 +154,27 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 		case templatePane:
 			if m.templates.SelectedItem() == nil {
 				m.formActive = false
-				return m, nil
+				return nil
 			}
 			currTemplate := m.templates.SelectedItem().(Template)
 			formName = currTemplate.Name
 		}
 
 		m.form = newForm(m.pane)
-		return m, m.form.Init()
+		return m.form.Init()
 
 	default:
-		return m, nil
+		return nil
 	}
 }
 
 func (m *Model) handleFormSubmit() tea.Cmd {
+
+	if m.form.State != huh.StateCompleted || formApply == false {
+		m.formActive = false
+		return nil
+	}
+
 	switch m.pane {
 	case appPane:
 		newApp := App{
@@ -213,15 +238,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "n":
 			if !m.formActive {
-				return m.triggerForm(formActionCreate)
+				return m, m.triggerForm(formActionCreate)
 			}
 		case "e":
 			if !m.formActive {
-				return m.triggerForm(formActionEdit)
+				return m, m.triggerForm(formActionEdit)
 			}
 		case "x":
 			if !m.formActive {
-				return m.triggerForm(formActionDelete)
+				return m, m.triggerForm(formActionDelete)
+			}
+		case "esc":
+			if m.formActive {
+				return m, m.handleFormSubmit()
 			}
 		}
 	}
@@ -246,25 +275,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
-		if m.form.State == huh.StateCompleted {
-			if m.pane == appPane && m.formAction != formActionDelete {
-				if !m.filepickerActive {
-					m.filepickerActive = true
-					m.filepicker = filepicker.New()
-					m.filepicker.CurrentDirectory, _ = os.UserHomeDir()
-					if m.selectedFile != "" {
-						dir := strings.TrimRightFunc(m.selectedFile, func(r rune) bool {
-							return !strings.ContainsRune("/", r)
-						})
-						m.filepicker.CurrentDirectory = dir
-					}
-					m.filepicker.ShowHidden = true
-					m.filepicker.Height = m.height - 6
-					return m, m.filepicker.Init()
-				}
+		if m.form.State == huh.StateAborted {
+			return m, m.handleFormSubmit()
+		}
 
+		if m.form.State == huh.StateCompleted {
+			if m.pane == appPane && m.formAction != formActionDelete && m.form.GetBool("config") == true {
+				return m, m.triggerFilepicker()
 			} else {
-				m.formActive = false
 				cmds = append(cmds, m.handleFormSubmit())
 			}
 		}

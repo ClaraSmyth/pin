@@ -38,8 +38,13 @@ func (a AppDelegate) Height() int  { return 1 }
 func (a AppDelegate) Spacing() int { return 0 }
 
 func (a AppDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
+	selectedItem := m.SelectedItem()
+	if selectedItem == nil {
+		return nil
+	}
+
 	return func() tea.Msg {
-		return updateTemplatesMsg(m.SelectedItem().(App))
+		return updateTemplatesMsg(selectedItem.(App))
 	}
 }
 
@@ -95,14 +100,16 @@ func newLists() (list.Model, list.Model) {
 	appList.SetShowHelp(false)
 	appList.SetShowFilter(false)
 
-	selectedApp := appList.SelectedItem().FilterValue()
-
 	templateList.Title = "Templates"
 	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
 	templateList.Styles.Title = styles.Title
 	templateList.SetShowHelp(false)
 	templateList.SetShowFilter(false)
-	templateList.SetItems(GetTemplates(selectedApp))
+
+	if len(appList.Items()) != 0 {
+		selectedApp := appList.SelectedItem().(App)
+		templateList.SetItems(GetTemplates(selectedApp.Name))
+	}
 
 	return appList, templateList
 }

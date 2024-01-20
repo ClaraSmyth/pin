@@ -5,9 +5,10 @@ import (
 )
 
 var (
-	formName  string
-	formHook  string
-	formApply bool
+	formName   string
+	formHook   string
+	formConfig bool
+	formApply  bool
 )
 
 func newForm(pane Pane) *huh.Form {
@@ -27,11 +28,13 @@ func newForm(pane Pane) *huh.Form {
 					Value(&formHook),
 
 				huh.NewConfirm().
-					Key("apply").
-					Title("Apply?").
-					Value(&formApply),
+					Key("config").
+					Title("Select config file").
+					Affirmative("Select").
+					Negative("Cancel").
+					Value(&formConfig),
 			),
-		).WithShowHelp(false).WithWidth(20)
+		).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
 
 	case templatePane:
 		return huh.NewForm(
@@ -46,7 +49,7 @@ func newForm(pane Pane) *huh.Form {
 					Title("Apply?").
 					Value(&formApply),
 			),
-		).WithShowHelp(false).WithWidth(20)
+		).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
 
 	default:
 		return nil
@@ -61,5 +64,5 @@ func deleteForm() *huh.Form {
 				Title("Are you sure?").
 				Value(&formApply),
 		),
-	).WithShowHelp(false).WithWidth(20)
+	).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
 }
