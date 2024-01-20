@@ -97,7 +97,7 @@ func newLists() (list.Model, list.Model) {
 
 	selectedApp := appList.SelectedItem().FilterValue()
 
-	templateList.Title = selectedApp + " Templates"
+	templateList.Title = "Templates"
 	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
 	templateList.Styles.Title = styles.Title
 	templateList.SetShowHelp(false)

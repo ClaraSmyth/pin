@@ -3,7 +3,6 @@ package main
 import (
 	"cmp"
 	"io/fs"
-	"log"
 	"os"
 	"slices"
 	"strings"
@@ -151,17 +150,17 @@ func DeleteApp(prevApp App, appList []list.Item) tea.Cmd {
 
 	d, err := yaml.Marshal(&apps)
 	if err != nil {
-		log.Fatal("1")
+		panic(err)
 	}
 
 	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
 	if err != nil {
-		log.Fatal("2")
+		panic(err)
 	}
 
 	err = os.RemoveAll("./config/templates/" + strings.ToLower(prevApp.Name))
 	if err != nil {
-		log.Fatal("3")
+		panic(err)
 	}
 
 	var appListItems []list.Item
@@ -216,8 +215,8 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 
 func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 	basePath := "./config/templates/"
-	prevPath := basePath + app.Name + "/" + prevFilename
-	newPath := basePath + app.Name + "/" + newFilename
+	prevPath := basePath + strings.ToLower(app.Name) + "/" + prevFilename
+	newPath := basePath + strings.ToLower(app.Name) + "/" + newFilename
 
 	err := os.Rename(prevPath, newPath)
 	if err != nil {
@@ -231,7 +230,7 @@ func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 
 func DeleteTemplate(app App, filename string) tea.Cmd {
 	basePath := "./config/templates/"
-	path := basePath + app.Name + "/" + filename
+	path := basePath + strings.ToLower(app.Name) + "/" + filename
 	err := os.Remove(path)
 	if err != nil {
 		panic(err)

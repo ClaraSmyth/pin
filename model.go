@@ -101,14 +101,14 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 
 		switch m.pane {
 		case appPane:
-			if len(m.apps.Items()) == 0 {
+			if m.apps.SelectedItem() == nil {
 				m.formActive = false
 				m.formAction = formActionCreate
 				return m, nil
 			}
 
 		case templatePane:
-			if len(m.templates.Items()) == 0 {
+			if m.templates.SelectedItem() == nil {
 				m.formActive = false
 				m.formAction = formActionCreate
 				return m, nil
@@ -123,7 +123,7 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 
 		switch m.pane {
 		case appPane:
-			if len(m.apps.Items()) == 0 {
+			if m.apps.SelectedItem() == nil {
 				m.formActive = false
 				return m, nil
 			}
@@ -133,7 +133,7 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 			m.selectedFile = currApp.Path
 
 		case templatePane:
-			if len(m.templates.Items()) == 0 {
+			if m.templates.SelectedItem() == nil {
 				m.formActive = false
 				return m, nil
 			}
@@ -152,7 +152,6 @@ func (m *Model) triggerForm(formAction FormAction) (tea.Model, tea.Cmd) {
 func (m *Model) handleFormSubmit() tea.Cmd {
 	switch m.pane {
 	case appPane:
-
 		newApp := App{
 			Name:     m.form.GetString("name"),
 			Path:     m.selectedFile,
