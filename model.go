@@ -42,7 +42,7 @@ type Model struct {
 	height           int
 }
 
-type updateTemplatesMsg App
+type updateTemplateListMsg []list.Item
 
 type updateAppListMsg []list.Item
 
@@ -64,14 +64,6 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) updateTemplates() tea.Cmd {
-	selectedApp := m.apps.SelectedItem()
-	if selectedApp != nil {
-		return m.templates.SetItems(GetTemplates(selectedApp.(App).Name))
-	}
-	return nil
-}
-
 func (m *Model) updatePane() {
 	switch m.pane {
 	case appPane:
@@ -79,7 +71,6 @@ func (m *Model) updatePane() {
 	case templatePane:
 		m.pane = appPane
 	}
-
 }
 
 func (m *Model) triggerFilepicker() tea.Cmd {
@@ -105,7 +96,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	// Reset Form Values
 	formName = ""
 	formHook = ""
-	formConfig = false
+	formFilepicker = false
 	formApply = false
 	m.selectedFile = ""
 
@@ -170,8 +161,10 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 
 func (m *Model) handleFormSubmit() tea.Cmd {
 
+	m.formActive = false
+	m.filepickerActive = false
+
 	if m.form.State != huh.StateCompleted || formApply == false {
-		m.formActive = false
 		return nil
 	}
 
@@ -209,13 +202,12 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 			return DeleteTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Filename)
 		}
 	}
-
 	return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	var cmd tea.Cmd
-	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -224,8 +216,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
-	case updateTemplatesMsg:
-		return m, m.updateTemplates()
+	case updateTemplateListMsg:
+		return m, m.templates.SetItems(msg)
 
 	case updateAppListMsg:
 		return m, m.apps.SetItems(msg)
@@ -263,11 +255,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selectedFile = path
 				m.formActive = false
 				m.filepickerActive = false
+				formFilepicker = false
+				formApply = true
 				return m, m.handleFormSubmit()
 			}
 
 			return m, cmd
 		}
+
+		var cmds []tea.Cmd
 
 		form, cmd := m.form.Update(msg)
 		if f, ok := form.(*huh.Form); ok {
@@ -280,10 +276,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.form.State == huh.StateCompleted {
-			if m.pane == appPane && m.formAction != formActionDelete && m.form.GetBool("config") == true {
+			if m.pane == appPane && m.formAction != formActionDelete && m.form.GetBool("filepicker") == true {
 				return m, m.triggerFilepicker()
 			} else {
-				cmds = append(cmds, m.handleFormSubmit())
+				return m, m.handleFormSubmit()
 			}
 		}
 
@@ -292,19 +288,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.pane == appPane {
 		m.apps, cmd = m.apps.Update(msg)
-		cmds = append(cmds, cmd)
+		return m, cmd
 	}
 
 	if m.pane == templatePane {
 		m.templates, cmd = m.templates.Update(msg)
-		cmds = append(cmds, cmd)
+		return m, cmd
 	}
 
-	return m, tea.Batch(cmds...)
+	return m, nil
 }
 
 func (m *Model) View() string {
-
 	appView := m.apps.View()
 	if m.formActive && m.pane == appPane {
 		appView = m.form.View()

@@ -200,6 +200,13 @@ func GetTemplates(appName string) []list.Item {
 	return templateList
 }
 
+func UpdateTemplates(appName string) tea.Cmd {
+	templates := GetTemplates(appName)
+	return func() tea.Msg {
+		return updateTemplateListMsg(templates)
+	}
+}
+
 func CreateTemplate(app App, filename string) tea.Cmd {
 	f, err := os.Create("./config/templates/" + strings.ToLower(app.Name) + "/" + filename)
 	if err != nil {
@@ -208,9 +215,7 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 
 	defer f.Close()
 
-	return func() tea.Msg {
-		return updateTemplatesMsg(app)
-	}
+	return UpdateTemplates(app.Name)
 }
 
 func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
@@ -223,9 +228,7 @@ func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 		panic(err)
 	}
 
-	return func() tea.Msg {
-		return updateTemplatesMsg(app)
-	}
+	return UpdateTemplates(app.Name)
 }
 
 func DeleteTemplate(app App, filename string) tea.Cmd {
@@ -236,7 +239,5 @@ func DeleteTemplate(app App, filename string) tea.Cmd {
 		panic(err)
 	}
 
-	return func() tea.Msg {
-		return updateTemplatesMsg(app)
-	}
+	return UpdateTemplates(app.Name)
 }
