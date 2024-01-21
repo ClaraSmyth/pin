@@ -188,7 +188,7 @@ func GetTemplates(appName string) []list.Item {
 			continue
 		}
 		filename := entry.Name()
-		template := Template{Name: strings.Split(filename, ".")[0], Filename: filename}
+		template := Template{Name: strings.Split(filename, ".")[0], Path: path + "/" + filename}
 		templateList = append(templateList, list.Item(template))
 	}
 

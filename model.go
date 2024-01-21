@@ -73,6 +73,24 @@ func (m *Model) updatePane() {
 	}
 }
 
+func (m *Model) openFileEditor() tea.Cmd {
+	var path string
+	if m.pane == appPane {
+		path = m.apps.SelectedItem().(App).Path
+	}
+	if m.pane == templatePane {
+		path = m.templates.SelectedItem().(Template).Path
+	}
+
+	if path == "" {
+		return nil
+	}
+
+	return tea.ExecProcess(editorCmd(path), func(err error) tea.Msg {
+		return nil
+	})
+}
+
 func (m *Model) triggerFilepicker() tea.Cmd {
 	m.filepickerActive = true
 	m.filepicker = filepicker.New()
@@ -193,10 +211,10 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 			return CreateTemplate(m.apps.SelectedItem().(App), m.form.GetString("name"))
 
 		case formActionEdit:
-			return EditTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Filename, m.form.GetString("name"))
+			return EditTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Name, m.form.GetString("name"))
 
 		case formActionDelete:
-			return DeleteTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Filename)
+			return DeleteTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Name)
 		}
 	}
 	return nil
@@ -220,26 +238,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.apps.SetItems(msg)
 
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab":
-			if !m.formActive {
-				m.updatePane()
-			}
-		case "n":
-			if !m.formActive {
-				return m, m.triggerForm(formActionCreate)
-			}
-		case "e":
-			if !m.formActive {
-				return m, m.triggerForm(formActionEdit)
-			}
-		case "x":
-			if !m.formActive {
-				return m, m.triggerForm(formActionDelete)
-			}
-		case "esc":
-			if m.formActive {
+
+		if m.formActive {
+			switch msg.String() {
+			case "esc":
 				return m, m.handleFormSubmit()
+			}
+		}
+
+		if !m.formActive {
+			switch msg.String() {
+			case "tab":
+				m.updatePane()
+			case "n":
+				return m, m.triggerForm(formActionCreate)
+			case "e":
+				return m, m.triggerForm(formActionEdit)
+			case "x":
+				return m, m.triggerForm(formActionDelete)
+			case "enter":
+				return m, m.openFileEditor()
 			}
 		}
 	}

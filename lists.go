@@ -20,15 +20,6 @@ type App struct {
 	Active   bool   `yaml:"active"`
 }
 
-var defaultApp = App{
-	Name:     "userdefined",
-	Path:     "userdefined",
-	Template: "empty",
-	Hook:     "",
-	Backup:   "active app config file",
-	Active:   false,
-}
-
 func (a App) FilterValue() string { return a.Name }
 func (a App) Test() App           { return a }
 
@@ -63,8 +54,8 @@ func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 // Template List
 
 type Template struct {
-	Name     string
-	Filename string
+	Name string
+	Path string
 }
 
 func (t Template) FilterValue() string { return t.Name }
