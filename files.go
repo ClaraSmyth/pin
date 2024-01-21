@@ -2,7 +2,6 @@ package main
 
 import (
 	"cmp"
-	"io/fs"
 	"os"
 	"slices"
 	"strings"
@@ -11,6 +10,18 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"gopkg.in/yaml.v3"
 )
+
+func WriteAppData(appsMap map[string]App) {
+	d, err := yaml.Marshal(&appsMap)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func GetApps() []list.Item {
 	rawData, err := os.ReadFile("./config/apps.yaml")
@@ -25,21 +36,37 @@ func GetApps() []list.Item {
 		panic(err)
 	}
 
-	dirs, err := os.ReadDir("./config/templates/")
+	entries, err := os.ReadDir("./config/templates/")
 	if err != nil {
 		panic(err)
 	}
 
-	dirsMap := make(map[string]fs.DirEntry)
-
-	for _, dir := range dirs {
-		dirsMap[strings.ToLower(dir.Name())] = dir
-	}
-
 	appListItems := []list.Item{}
 
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		app, exists := appsMap[name]
+
+		if exists {
+			appListItems = append(appListItems, app)
+			delete(appsMap, name)
+		} else {
+			newApp := App{Name: name}
+			appListItems = append(appListItems, newApp)
+		}
+	}
+
+	// Append any remaining apps that have a missing dir + create a dir
 	for _, app := range appsMap {
-		appListItems = append(appListItems, list.Item(app))
+		err = os.Mkdir(("./config/templates/" + app.Name), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+
+		appListItems = append(appListItems, app)
 	}
 
 	slices.SortFunc[[]list.Item, list.Item](appListItems, func(a, b list.Item) int {
@@ -50,141 +77,104 @@ func GetApps() []list.Item {
 }
 
 func CreateApp(newApp App, appList []list.Item) tea.Cmd {
-
 	if newApp.Name == "" {
 		return nil
 	}
 
-	apps := make(map[string]App)
+	appList = append(appList, newApp)
+	appsMap := make(map[string]App)
 
 	for _, item := range appList {
 		app := item.(App)
-		apps[strings.ToLower(app.Name)] = app
+		appsMap[app.Name] = app
 	}
 
-	apps[strings.ToLower(newApp.Name)] = newApp
+	WriteAppData(appsMap)
 
-	d, err := yaml.Marshal(&apps)
+	err := os.Mkdir(("./config/templates/" + newApp.Name), os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
 
-	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.Mkdir(("./config/templates/" + strings.ToLower(newApp.Name)), os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	var appListItems []list.Item
-
-	for _, app := range apps {
-		appListItems = append(appListItems, list.Item(app))
-	}
-
-	slices.SortFunc[[]list.Item, list.Item](appListItems, func(a, b list.Item) int {
+	slices.SortFunc[[]list.Item, list.Item](appList, func(a, b list.Item) int {
 		return cmp.Compare(a.(App).Name, b.(App).Name)
 	})
 
 	return func() tea.Msg {
-		return updateAppListMsg(appListItems)
+		return updateAppListMsg(appList)
 	}
 }
 
-func EditApp(newApp App, prevApp App, appList []list.Item) tea.Cmd {
-	apps := make(map[string]App)
+func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 
-	for _, item := range appList {
+	newList := []list.Item{newApp}
+	appsMap := make(map[string]App)
+
+	for _, item := range prevList {
 		app := item.(App)
 
 		if app.Name == prevApp.Name {
 			continue
 		}
 
-		apps[strings.ToLower(app.Name)] = app
+		appsMap[app.Name] = app
+		newList = append(newList, app)
 	}
 
-	apps[strings.ToLower(newApp.Name)] = newApp
-
-	d, err := yaml.Marshal(&apps)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
+	WriteAppData(appsMap)
 
 	basePath := "./config/templates/"
-	prevPath := basePath + strings.ToLower(prevApp.Name)
-	newPath := basePath + strings.ToLower(newApp.Name)
+	prevPath := basePath + prevApp.Name
+	newPath := basePath + newApp.Name
 
-	err = os.Rename(prevPath, newPath)
-
-	var appListItems []list.Item
-
-	for _, app := range apps {
-		appListItems = append(appListItems, list.Item(app))
+	err := os.Rename(prevPath, newPath)
+	if err != nil {
+		panic(err)
 	}
 
-	slices.SortFunc[[]list.Item, list.Item](appListItems, func(a, b list.Item) int {
+	slices.SortFunc[[]list.Item, list.Item](newList, func(a, b list.Item) int {
 		return cmp.Compare(a.(App).Name, b.(App).Name)
 	})
 
 	return func() tea.Msg {
-		return updateAppListMsg(appListItems)
+		return updateAppListMsg(newList)
 	}
 }
 
-func DeleteApp(prevApp App, appList []list.Item) tea.Cmd {
-	apps := make(map[string]App)
+func DeleteApp(prevApp App, prevList []list.Item) tea.Cmd {
 
-	for _, item := range appList {
+	newList := []list.Item{}
+	appsMap := make(map[string]App)
+
+	for _, item := range prevList {
 		app := item.(App)
 
 		if app.Name == prevApp.Name {
 			continue
 		}
 
-		apps[strings.ToLower(app.Name)] = app
+		appsMap[app.Name] = app
+		newList = append(newList, app)
 	}
 
-	d, err := yaml.Marshal(&apps)
+	WriteAppData(appsMap)
+
+	err := os.RemoveAll("./config/templates/" + prevApp.Name)
 	if err != nil {
 		panic(err)
 	}
 
-	err = os.WriteFile("./config/apps.yaml", d, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.RemoveAll("./config/templates/" + strings.ToLower(prevApp.Name))
-	if err != nil {
-		panic(err)
-	}
-
-	var appListItems []list.Item
-
-	for _, app := range apps {
-		appListItems = append(appListItems, list.Item(app))
-	}
-
-	slices.SortFunc[[]list.Item, list.Item](appListItems, func(a, b list.Item) int {
+	slices.SortFunc[[]list.Item, list.Item](newList, func(a, b list.Item) int {
 		return cmp.Compare(a.(App).Name, b.(App).Name)
 	})
 
 	return func() tea.Msg {
-		return updateAppListMsg(appListItems)
+		return updateAppListMsg(newList)
 	}
 }
 
 func GetTemplates(appName string) []list.Item {
-	path := "./config/templates/" + strings.ToLower(appName)
+	path := "./config/templates/" + appName
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -217,7 +207,7 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 		return nil
 	}
 
-	f, err := os.Create("./config/templates/" + strings.ToLower(app.Name) + "/" + filename)
+	f, err := os.Create("./config/templates/" + app.Name + "/" + filename)
 	if err != nil {
 		panic(err)
 	}
@@ -229,8 +219,8 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 
 func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 	basePath := "./config/templates/"
-	prevPath := basePath + strings.ToLower(app.Name) + "/" + prevFilename
-	newPath := basePath + strings.ToLower(app.Name) + "/" + newFilename
+	prevPath := basePath + app.Name + "/" + prevFilename
+	newPath := basePath + app.Name + "/" + newFilename
 
 	err := os.Rename(prevPath, newPath)
 	if err != nil {
@@ -242,7 +232,7 @@ func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 
 func DeleteTemplate(app App, filename string) tea.Cmd {
 	basePath := "./config/templates/"
-	path := basePath + strings.ToLower(app.Name) + "/" + filename
+	path := basePath + app.Name + "/" + filename
 	err := os.Remove(path)
 	if err != nil {
 		panic(err)
