@@ -50,6 +50,11 @@ func GetApps() []list.Item {
 }
 
 func CreateApp(newApp App, appList []list.Item) tea.Cmd {
+
+	if newApp.Name == "" {
+		return nil
+	}
+
 	apps := make(map[string]App)
 
 	for _, item := range appList {
@@ -208,6 +213,10 @@ func UpdateTemplates(appName string) tea.Cmd {
 }
 
 func CreateTemplate(app App, filename string) tea.Cmd {
+	if filename == "" {
+		return nil
+	}
+
 	f, err := os.Create("./config/templates/" + strings.ToLower(app.Name) + "/" + filename)
 	if err != nil {
 		panic(err)

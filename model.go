@@ -89,9 +89,9 @@ func (m *Model) triggerFilepicker() tea.Cmd {
 }
 
 func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
-
-	// Set form to active
+	// Set form to active and set formAction
 	m.formActive = true
+	m.formAction = formAction
 
 	// Reset Form Values
 	formName = ""
@@ -100,47 +100,13 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	formApply = false
 	m.selectedFile = ""
 
-	switch formAction {
-	case formActionCreate:
-		m.formAction = formAction
-
-		switch m.pane {
-		case appPane:
+	switch m.pane {
+	case appPane:
+		switch formAction {
+		case formActionCreate:
 			m.form = newForm(m.pane, m.apps.Items())
 
-		case templatePane:
-			m.form = newForm(m.pane, m.apps.Items())
-		}
-
-		return m.form.Init()
-
-	case formActionDelete:
-		m.formAction = formAction
-
-		switch m.pane {
-		case appPane:
-			if m.apps.SelectedItem() == nil {
-				m.formActive = false
-				m.formAction = formActionCreate
-				return nil
-			}
-
-		case templatePane:
-			if m.templates.SelectedItem() == nil {
-				m.formActive = false
-				m.formAction = formActionCreate
-				return nil
-			}
-		}
-
-		m.form = deleteForm()
-		return m.form.Init()
-
-	case formActionEdit:
-		m.formAction = formAction
-
-		switch m.pane {
-		case appPane:
+		case formActionEdit:
 			if m.apps.SelectedItem() == nil {
 				m.formActive = false
 				return nil
@@ -151,7 +117,22 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			m.selectedFile = currApp.Path
 			m.form = newForm(m.pane, m.apps.Items())
 
-		case templatePane:
+		case formActionDelete:
+			if m.apps.SelectedItem() == nil {
+				m.formActive = false
+				m.formAction = formActionCreate
+				return nil
+			}
+			m.form = deleteForm()
+		}
+		return m.form.Init()
+
+	case templatePane:
+		switch formAction {
+		case formActionCreate:
+			m.form = newForm(m.pane, m.templates.Items())
+
+		case formActionEdit:
 			if m.templates.SelectedItem() == nil {
 				m.formActive = false
 				return nil
@@ -159,8 +140,15 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			currTemplate := m.templates.SelectedItem().(Template)
 			formName = currTemplate.Name
 			m.form = newForm(m.pane, m.templates.Items())
-		}
 
+		case formActionDelete:
+			if m.templates.SelectedItem() == nil {
+				m.formActive = false
+				m.formAction = formActionCreate
+				return nil
+			}
+			m.form = deleteForm()
+		}
 		return m.form.Init()
 
 	default:
