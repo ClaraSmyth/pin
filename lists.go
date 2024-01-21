@@ -79,7 +79,7 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 	fmt.Fprint(w, t.styles.Unselected.Render("  "+template.Name))
 }
 
-func newLists() (list.Model, list.Model) {
+func newLists() map[Pane]*list.Model {
 	appList := list.New(GetApps(), AppDelegate{styles}, 0, 0)
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
 
@@ -100,5 +100,10 @@ func newLists() (list.Model, list.Model) {
 		templateList.SetItems(GetTemplates(selectedApp.Name))
 	}
 
-	return appList, templateList
+	listMap := make(map[Pane]*list.Model)
+
+	listMap[appPane] = &appList
+	listMap[templatePane] = &templateList
+
+	return listMap
 }

@@ -29,8 +29,7 @@ const (
 
 type Model struct {
 	help             help.Model
-	apps             list.Model
-	templates        list.Model
+	lists            map[Pane]*list.Model
 	pane             Pane
 	keys             KeyMap
 	form             *huh.Form
@@ -44,17 +43,19 @@ type Model struct {
 
 type updateTemplateListMsg []list.Item
 
-type updateAppListMsg []list.Item
+type updateAppListMsg struct {
+	appListItems      []list.Item
+	templateListItems []list.Item
+}
 
 func newModel() *Model {
-	appList, templateList := newLists()
+	listMap := newLists()
 
 	return &Model{
+		lists:            listMap,
 		keys:             DefaultKeyMap,
 		help:             help.New(),
 		pane:             appPane,
-		apps:             appList,
-		templates:        templateList,
 		formActive:       false,
 		filepickerActive: false,
 	}
@@ -75,20 +76,18 @@ func (m *Model) updatePane() {
 
 func (m *Model) openFileEditor() tea.Cmd {
 	var path string
-	if m.pane == appPane {
-		path = m.apps.SelectedItem().(App).Path
-	}
-	if m.pane == templatePane {
-		path = m.templates.SelectedItem().(Template).Path
-	}
 
-	if path == "" {
-		return nil
+	switch selectedItem := m.lists[m.pane].SelectedItem().(type) {
+	case App:
+		path = selectedItem.Path
+	case Template:
+		path = selectedItem.Path
 	}
 
 	return tea.ExecProcess(editorCmd(path), func(err error) tea.Msg {
 		return nil
 	})
+
 }
 
 func (m *Model) triggerFilepicker() tea.Cmd {
@@ -118,60 +117,33 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	formApply = false
 	m.selectedFile = ""
 
-	switch m.pane {
-	case appPane:
-		switch formAction {
-		case formActionCreate:
-			m.form = newForm(m.pane, m.apps.Items())
-
-		case formActionEdit:
-			if m.apps.SelectedItem() == nil {
-				m.formActive = false
-				return nil
-			}
-			currApp := m.apps.SelectedItem().(App)
-			formName = currApp.Name
-			formHook = currApp.Hook
-			m.selectedFile = currApp.Path
-			m.form = newForm(m.pane, m.apps.Items())
-
-		case formActionDelete:
-			if m.apps.SelectedItem() == nil {
-				m.formActive = false
-				m.formAction = formActionCreate
-				return nil
-			}
-			m.form = deleteForm()
-		}
-		return m.form.Init()
-
-	case templatePane:
-		switch formAction {
-		case formActionCreate:
-			m.form = newForm(m.pane, m.templates.Items())
-
-		case formActionEdit:
-			if m.templates.SelectedItem() == nil {
-				m.formActive = false
-				return nil
-			}
-			currTemplate := m.templates.SelectedItem().(Template)
-			formName = currTemplate.Name
-			m.form = newForm(m.pane, m.templates.Items())
-
-		case formActionDelete:
-			if m.templates.SelectedItem() == nil {
-				m.formActive = false
-				m.formAction = formActionCreate
-				return nil
-			}
-			m.form = deleteForm()
-		}
-		return m.form.Init()
-
-	default:
+	selectedItem := m.lists[m.pane].SelectedItem()
+	if selectedItem == nil && formAction != formActionCreate {
+		m.formActive = false
+		m.formAction = formActionCreate
 		return nil
 	}
+
+	switch formAction {
+	case formActionCreate:
+		m.form = newForm(m.pane, m.lists[m.pane].Items())
+
+	case formActionEdit:
+		switch item := selectedItem.(type) {
+		case App:
+			formName = item.Name
+			formHook = item.Hook
+			m.selectedFile = item.Path
+		case Template:
+			formName = item.Name
+		}
+		m.form = newForm(m.pane, m.lists[m.pane].Items())
+
+	case formActionDelete:
+		m.form = deleteForm()
+	}
+
+	return m.form.Init()
 }
 
 func (m *Model) handleFormSubmit() tea.Cmd {
@@ -196,25 +168,25 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 
 		switch m.formAction {
 		case formActionCreate:
-			return CreateApp(newApp, m.apps.Items())
+			return CreateApp(newApp, m.lists[appPane].Items())
 
 		case formActionEdit:
-			return EditApp(newApp, m.apps.SelectedItem().(App), m.apps.Items())
+			return EditApp(newApp, m.lists[appPane].SelectedItem().(App), m.lists[appPane].Items())
 
 		case formActionDelete:
-			return DeleteApp(m.apps.SelectedItem().(App), m.apps.Items())
+			return DeleteApp(m.lists[appPane].SelectedItem().(App), m.lists[appPane].Items())
 		}
 
 	case templatePane:
 		switch m.formAction {
 		case formActionCreate:
-			return CreateTemplate(m.apps.SelectedItem().(App), m.form.GetString("name"))
+			return CreateTemplate(m.lists[appPane].SelectedItem().(App), m.form.GetString("name"))
 
 		case formActionEdit:
-			return EditTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Name, m.form.GetString("name"))
+			return EditTemplate(m.lists[appPane].SelectedItem().(App), m.lists[templatePane].SelectedItem().(Template).Name, m.form.GetString("name"))
 
 		case formActionDelete:
-			return DeleteTemplate(m.apps.SelectedItem().(App), m.templates.SelectedItem().(Template).Name)
+			return DeleteTemplate(m.lists[appPane].SelectedItem().(App), m.lists[templatePane].SelectedItem().(Template).Name)
 		}
 	}
 	return nil
@@ -226,16 +198,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.apps.SetSize(msg.Width, msg.Height-2)
-		m.templates.SetSize(msg.Width, msg.Height-2)
+		m.lists[appPane].SetSize(msg.Width, msg.Height-2)
+		m.lists[templatePane].SetSize(msg.Width, msg.Height-2)
 		m.height = msg.Height
 		return m, nil
 
 	case updateTemplateListMsg:
-		return m, m.templates.SetItems(msg)
+		return m, m.lists[templatePane].SetItems(msg)
 
 	case updateAppListMsg:
-		return m, m.apps.SetItems(msg)
+		return m, tea.Batch(m.lists[appPane].SetItems(msg.appListItems), m.lists[templatePane].SetItems(msg.templateListItems))
 
 	case tea.KeyMsg:
 
@@ -301,21 +273,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	}
 
-	if m.pane == appPane {
-		m.apps, cmd = m.apps.Update(msg)
-		return m, cmd
-	}
-
-	if m.pane == templatePane {
-		m.templates, cmd = m.templates.Update(msg)
-		return m, cmd
-	}
-
-	return m, nil
+	*m.lists[m.pane], cmd = m.lists[m.pane].Update(msg)
+	return m, cmd
 }
 
 func (m *Model) View() string {
-	appView := m.apps.View()
+	appView := m.lists[appPane].View()
 	if m.formActive && m.pane == appPane {
 		appView = m.form.View()
 		if m.filepickerActive {
@@ -324,7 +287,7 @@ func (m *Model) View() string {
 		}
 	}
 
-	templatesView := m.templates.View()
+	templatesView := m.lists[templatePane].View()
 	if m.formActive && m.pane == templatePane {
 		templatesView = m.form.View()
 	}

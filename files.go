@@ -100,8 +100,13 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 		return cmp.Compare(a.(App).Name, b.(App).Name)
 	})
 
+	newAppTemplates := []list.Item{}
+
 	return func() tea.Msg {
-		return updateAppListMsg(appList)
+		return updateAppListMsg{
+			appListItems:      appList,
+			templateListItems: newAppTemplates,
+		}
 	}
 }
 
@@ -132,12 +137,17 @@ func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 		panic(err)
 	}
 
+	newAppTemplates := GetTemplates(newApp.Name)
+
 	slices.SortFunc[[]list.Item, list.Item](newList, func(a, b list.Item) int {
 		return cmp.Compare(a.(App).Name, b.(App).Name)
 	})
 
 	return func() tea.Msg {
-		return updateAppListMsg(newList)
+		return updateAppListMsg{
+			appListItems:      newList,
+			templateListItems: newAppTemplates,
+		}
 	}
 }
 
@@ -164,12 +174,17 @@ func DeleteApp(prevApp App, prevList []list.Item) tea.Cmd {
 		panic(err)
 	}
 
+	newAppTemplates := []list.Item{}
+
 	slices.SortFunc[[]list.Item, list.Item](newList, func(a, b list.Item) int {
 		return cmp.Compare(a.(App).Name, b.(App).Name)
 	})
 
 	return func() tea.Msg {
-		return updateAppListMsg(newList)
+		return updateAppListMsg{
+			appListItems:      newList,
+			templateListItems: newAppTemplates,
+		}
 	}
 }
 
