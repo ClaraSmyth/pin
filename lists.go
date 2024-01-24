@@ -18,10 +18,10 @@ type App struct {
 	Hook     string `yaml:"hook"`
 	Backup   string `yaml:"backup"`
 	Active   bool   `yaml:"active"`
+	Rewrite  bool   `yaml:"rewrite"`
 }
 
 func (a App) FilterValue() string { return a.Name }
-func (a App) Test() App           { return a }
 
 type AppDelegate struct{ styles ListStyles }
 
@@ -54,8 +54,9 @@ func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 // Template List
 
 type Template struct {
-	Name string
-	Path string
+	Name    string
+	Path    string
+	AppPath string
 }
 
 func (t Template) FilterValue() string { return t.Name }

@@ -114,6 +114,7 @@ func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 
 	newList := []list.Item{newApp}
 	appsMap := make(map[string]App)
+	appsMap[newApp.Name] = newApp
 
 	for _, item := range prevList {
 		app := item.(App)
@@ -128,13 +129,15 @@ func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 
 	WriteAppData(appsMap)
 
-	basePath := "./config/templates/"
-	prevPath := basePath + prevApp.Name
-	newPath := basePath + newApp.Name
+	if newApp.Name != prevApp.Name {
+		basePath := "./config/templates/"
+		prevPath := basePath + prevApp.Name
+		newPath := basePath + newApp.Name
 
-	err := os.Rename(prevPath, newPath)
-	if err != nil {
-		panic(err)
+		err := os.Rename(prevPath, newPath)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	newAppTemplates := GetTemplates(newApp.Name)
@@ -202,8 +205,9 @@ func GetTemplates(appName string) []list.Item {
 		if entry.IsDir() {
 			continue
 		}
+
 		filename := entry.Name()
-		template := Template{Name: strings.Split(filename, ".")[0], Path: path + "/" + filename}
+		template := Template{Name: strings.Split(filename, ".")[0], Path: path + "/" + filename, AppPath: path}
 		templateList = append(templateList, list.Item(template))
 	}
 

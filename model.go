@@ -74,6 +74,19 @@ func (m *Model) updatePane() {
 	}
 }
 
+func (m *Model) selectItem() tea.Cmd {
+	switch selectedItem := m.lists[m.pane].SelectedItem().(type) {
+	case Template:
+		app := m.lists[appPane].SelectedItem().(App)
+		newApp := app
+		newApp.Template = selectedItem.Path
+		return EditApp(newApp, app, m.lists[appPane].Items())
+
+	default:
+		return nil
+	}
+}
+
 func (m *Model) openFileEditor() tea.Cmd {
 	var path string
 
@@ -114,6 +127,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	formName = ""
 	formHook = ""
 	formFilepicker = false
+	formRewrite = false
 	formApply = false
 	m.selectedFile = ""
 
@@ -133,6 +147,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 		case App:
 			formName = item.Name
 			formHook = item.Hook
+			formRewrite = item.Rewrite
 			m.selectedFile = item.Path
 		case Template:
 			formName = item.Name
@@ -158,12 +173,10 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 	switch m.pane {
 	case appPane:
 		newApp := App{
-			Name:     m.form.GetString("name"),
-			Path:     m.selectedFile,
-			Template: "Default",
-			Hook:     "Default",
-			Backup:   "Default",
-			Active:   false,
+			Name:    m.form.GetString("name"),
+			Path:    m.selectedFile,
+			Rewrite: !m.form.GetBool("rewrite"),
+			Active:  false,
 		}
 
 		switch m.formAction {
@@ -228,8 +241,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.triggerForm(formActionEdit)
 			case "x":
 				return m, m.triggerForm(formActionDelete)
-			case "enter":
+			case "o":
 				return m, m.openFileEditor()
+			case "enter":
+				return m, m.selectItem()
 			}
 		}
 	}

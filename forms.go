@@ -13,6 +13,7 @@ import (
 var (
 	formName       string
 	formHook       string
+	formRewrite    bool
 	formFilepicker bool
 	formApply      bool
 )
@@ -48,6 +49,13 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 					Key("hook").
 					Title("Hook").
 					Value(&formHook),
+
+				huh.NewConfirm().
+					Key("rewrite").
+					Title("Write method").
+					Affirmative("Insert").
+					Negative("Rewrite").
+					Value(&formRewrite),
 
 				huh.NewConfirm().
 					Key("filepicker").
