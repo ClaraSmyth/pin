@@ -68,19 +68,13 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) updatePane() {
-	switch m.pane {
-	case appPane:
-		m.pane = templatePane
-	case templatePane:
-		m.pane = themePane
-	case themePane:
-		m.pane = appPane
-	}
-}
-
 func (m *Model) selectItem() tea.Cmd {
 	switch selectedItem := m.lists[m.pane].SelectedItem().(type) {
+	case App:
+		app := m.lists[appPane].SelectedItem().(App)
+		newApp := app
+		newApp.Active = !app.Active
+		return EditApp(newApp, app, m.lists[appPane].Items())
 	case Template:
 		app := m.lists[appPane].SelectedItem().(App)
 		newApp := app
@@ -264,7 +258,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.formActive {
 			switch msg.String() {
 			case "tab":
-				m.updatePane()
+				m.pane = (m.pane + 1) % 3
+			case "shift+tab":
+				m.pane = (m.pane + 2) % 3
 			case "n":
 				return m, m.triggerForm(formActionCreate)
 			case "e":
