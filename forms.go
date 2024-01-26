@@ -98,6 +98,38 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 			),
 		).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
 
+	case themePane:
+		return huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Key("name").
+					Title("Theme name").
+					Value(&formName).
+					Validate(func(str string) error {
+						if str == "" {
+							return errors.New("Cant be empty!")
+						}
+
+						if !validateFilename(str) {
+							return errors.New("Invalid name!")
+						}
+
+						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
+							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
+						}) {
+							return errors.New("Already Exists!")
+						}
+
+						return nil
+					}),
+
+				huh.NewConfirm().
+					Key("apply").
+					Title("Apply?").
+					Value(&formApply),
+			),
+		).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
+
 	default:
 		return nil
 	}
