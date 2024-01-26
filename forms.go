@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	formEdit       bool
 	formName       string
 	formHook       string
 	formRewrite    bool
@@ -38,7 +39,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 
 						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
 							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
-						}) {
+						}) && !formEdit {
 							return errors.New("Already Exists!")
 						}
 
@@ -84,7 +85,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 
 						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
 							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
-						}) {
+						}) && !formEdit {
 							return errors.New("Already Exists!")
 						}
 
@@ -116,7 +117,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 
 						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
 							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
-						}) {
+						}) && !formEdit {
 							return errors.New("Already Exists!")
 						}
 
@@ -148,7 +149,7 @@ func deleteForm() *huh.Form {
 
 func validateFilename(filename string) bool {
 	for _, v := range filename {
-		if !unicode.IsLetter(v) && !unicode.IsDigit(v) {
+		if !unicode.IsLetter(v) && !unicode.IsDigit(v) && string(v) != "-" {
 			return false
 		}
 	}
