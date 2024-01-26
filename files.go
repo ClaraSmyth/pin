@@ -227,7 +227,7 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 			return nil
 		}
 
-		f, err := os.Create("./config/templates/" + app.Name + "/" + filename)
+		f, err := os.Create("./config/templates/" + app.Name + "/" + filename + ".mustache")
 		if err != nil {
 			panic(err)
 		}
@@ -242,8 +242,8 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 	return func() tea.Msg {
 		basePath := "./config/templates/"
-		prevPath := basePath + app.Name + "/" + prevFilename
-		newPath := basePath + app.Name + "/" + newFilename
+		prevPath := basePath + app.Name + "/" + prevFilename + ".mustache"
+		newPath := basePath + app.Name + "/" + newFilename + ".mustache"
 
 		err := os.Rename(prevPath, newPath)
 		if err != nil {
@@ -258,7 +258,7 @@ func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 func DeleteTemplate(app App, filename string) tea.Cmd {
 	return func() tea.Msg {
 		basePath := "./config/templates/"
-		path := basePath + app.Name + "/" + filename
+		path := basePath + app.Name + "/" + filename + ".mustache"
 		err := os.Remove(path)
 		if err != nil {
 			panic(err)
