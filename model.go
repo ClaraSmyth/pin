@@ -100,6 +100,8 @@ func (m *Model) openFileEditor() tea.Cmd {
 		path = selectedItem.Path
 	case Template:
 		path = selectedItem.Path
+	case Theme:
+		path = selectedItem.Path
 	}
 
 	return tea.ExecProcess(editorCmd(path), func(err error) tea.Msg {
@@ -239,6 +241,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case updateThemeListMsg:
+		m.lists[themePane].StopSpinner()
 		return m, m.lists[themePane].SetItems(msg)
 
 	case updateTemplateListMsg:
@@ -270,6 +273,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.openFileEditor()
 			case "enter":
 				return m, m.selectItem()
+			case "P":
+				if m.pane == themePane {
+					cmd := m.lists[themePane].StartSpinner()
+					return m, tea.Batch(GitCloneSchemes(), cmd)
+				}
 			}
 		}
 	}
@@ -341,8 +349,7 @@ func (m *Model) View() string {
 
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView, themeView),
-		"",
+		lipgloss.NewStyle().Height(m.height-1).Render(lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView, themeView)),
 		m.help.View(m.keys),
 	)
 }
