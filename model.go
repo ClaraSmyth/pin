@@ -159,7 +159,8 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 		case Template:
 			formName = item.Name
 		case Theme:
-			formName = item.Name
+			m.formActive = false
+			return nil
 		}
 		m.form = newForm(m.pane, m.lists[m.pane].Items())
 
@@ -215,9 +216,6 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 		switch m.formAction {
 		case formActionCreate:
 			return CreateTheme(m.form.GetString("name"), m.lists[themePane].Items())
-
-		case formActionEdit:
-			return EditTheme(m.form.GetString("name"), m.lists[themePane].SelectedItem().(Theme))
 
 		case formActionDelete:
 			return DeleteTheme(m.lists[themePane].SelectedItem().(Theme))

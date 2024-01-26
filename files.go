@@ -309,20 +309,6 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 	}
 }
 
-func EditTheme(newThemeName string, prevTheme Theme) tea.Cmd {
-	return func() tea.Msg {
-		basePath := "./config/schemes/custom/"
-
-		err := os.Rename(prevTheme.Path, basePath+newThemeName+".yaml")
-		if err != nil {
-			panic(err)
-		}
-
-		themeList := GetThemes()
-		return updateThemeListMsg(themeList)
-	}
-}
-
 func DeleteTheme(theme Theme) tea.Cmd {
 	return func() tea.Msg {
 		err := os.Remove(theme.Path)
