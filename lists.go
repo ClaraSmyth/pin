@@ -80,16 +80,43 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 	fmt.Fprint(w, t.styles.Unselected.Render("  "+template.Name))
 }
 
+// Theme List
+
+type Theme struct {
+	Name string
+	Path string
+}
+
+func (t Theme) FilterValue() string { return t.Name }
+
+type ThemeDelegate struct{ styles ListStyles }
+
+func (t ThemeDelegate) Height() int                               { return 1 }
+func (t ThemeDelegate) Spacing() int                              { return 0 }
+func (t ThemeDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
+	theme, ok := item.(Theme)
+	if !ok {
+		return
+	}
+
+	fmt.Fprint(w, "  ")
+	if index == m.Index() {
+		fmt.Fprint(w, t.styles.Selected.Render("❯ "+theme.Name))
+		return
+	}
+	fmt.Fprint(w, t.styles.Unselected.Render("  "+theme.Name))
+}
+
 func newLists() map[Pane]*list.Model {
 	appList := list.New(GetApps(), AppDelegate{styles}, 0, 0)
-	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
-
 	appList.Title = "Apps"
 	appList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
 	appList.Styles.Title = styles.Title
 	appList.SetShowHelp(false)
 	appList.SetShowFilter(false)
 
+	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
 	templateList.Title = "Templates"
 	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
 	templateList.Styles.Title = styles.Title
@@ -101,10 +128,18 @@ func newLists() map[Pane]*list.Model {
 		templateList.SetItems(GetTemplates(selectedApp.Name))
 	}
 
+	themeList := list.New(GetThemes(), ThemeDelegate{styles}, 0, 0)
+	themeList.Title = "Themes"
+	themeList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
+	themeList.Styles.Title = styles.Title
+	themeList.SetShowHelp(false)
+	themeList.SetShowFilter(false)
+
 	listMap := make(map[Pane]*list.Model)
 
 	listMap[appPane] = &appList
 	listMap[templatePane] = &templateList
+	listMap[themePane] = &themeList
 
 	return listMap
 }
