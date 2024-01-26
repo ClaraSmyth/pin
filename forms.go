@@ -96,7 +96,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 					Title("Apply?").
 					Value(&formApply),
 			),
-		).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
+		).WithShowHelp(false).WithWidth(20)
 
 	case themePane:
 		return huh.NewForm(
@@ -128,7 +128,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 					Title("Apply?").
 					Value(&formApply),
 			),
-		).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
+		).WithShowHelp(false).WithWidth(20)
 
 	default:
 		return nil
@@ -143,7 +143,7 @@ func deleteForm() *huh.Form {
 				Title("Are you sure?").
 				Value(&formApply),
 		),
-	).WithShowHelp(false).WithShowErrors(false).WithWidth(20)
+	).WithShowHelp(false).WithWidth(20)
 }
 
 func validateFilename(filename string) bool {
