@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // App List
@@ -110,17 +109,23 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 }
 
 func newLists() map[Pane]*list.Model {
-	appList := list.New(GetApps(), AppDelegate{styles}, 0, 0)
+	appList := list.New(GetApps(), AppDelegate{styles.FocusedStyles}, 0, 0)
 	appList.Title = "Apps"
-	appList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
-	appList.Styles.Title = styles.Title
+	appList.Styles.Title = styles.FocusedStyles.Title
+	appList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
+	appList.Styles.NoItems.Margin(0, 2)
+	appList.Styles.StatusBar.Width(20)
+	appList.FilterInput.CharLimit = 12
 	appList.SetShowHelp(false)
 	appList.SetShowFilter(false)
 
-	templateList := list.New([]list.Item{}, TemplateDelegate{styles}, 0, 0)
+	templateList := list.New([]list.Item{}, TemplateDelegate{styles.BaseStyles}, 0, 0)
 	templateList.Title = "Templates"
-	templateList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
-	templateList.Styles.Title = styles.Title
+	templateList.Styles.Title = styles.BaseStyles.Title
+	templateList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
+	templateList.Styles.NoItems.Margin(0, 2)
+	templateList.Styles.StatusBar.Width(20)
+	appList.FilterInput.CharLimit = 12
 	templateList.SetShowHelp(false)
 	templateList.SetShowFilter(false)
 
@@ -129,10 +134,12 @@ func newLists() map[Pane]*list.Model {
 		templateList.SetItems(GetTemplates(selectedApp.Name))
 	}
 
-	themeList := list.New(GetThemes(), ThemeDelegate{styles}, 0, 0)
+	themeList := list.New(GetThemes(), ThemeDelegate{styles.BaseStyles}, 0, 0)
 	themeList.Title = "Themes"
-	themeList.Styles.NoItems = lipgloss.NewStyle().Margin(0, 2)
-	themeList.Styles.Title = styles.Title
+	themeList.Styles.Title = styles.BaseStyles.Title
+	themeList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
+	themeList.Styles.NoItems.Margin(0, 2)
+	appList.FilterInput.CharLimit = 12
 	themeList.SetShowHelp(false)
 	themeList.SetShowFilter(false)
 	themeList.SetSpinner(spinner.MiniDot)
