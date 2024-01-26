@@ -86,7 +86,8 @@ func (m *Model) selectItem() tea.Cmd {
 		newApp := app
 		newApp.Template = selectedItem.Path
 		return EditApp(newApp, app, m.lists[appPane].Items())
-
+	case Theme:
+		return ApplyTheme(selectedItem)
 	default:
 		return nil
 	}
@@ -131,6 +132,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	m.formAction = formAction
 
 	// Reset Form Values
+	formEdit = false
 	formName = ""
 	formHook = ""
 	formFilepicker = false
@@ -152,11 +154,13 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	case formActionEdit:
 		switch item := selectedItem.(type) {
 		case App:
+			formEdit = true
 			formName = item.Name
 			formHook = item.Hook
 			formRewrite = item.Rewrite
 			m.selectedFile = item.Path
 		case Template:
+			formEdit = true
 			formName = item.Name
 		case Theme:
 			m.formActive = false
