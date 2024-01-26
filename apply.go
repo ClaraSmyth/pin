@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/ClaraSmyth/pin/builder"
+	tea "github.com/charmbracelet/bubbletea"
 	"gopkg.in/yaml.v3"
 )
 
-func ApplyTheme(theme Theme) {
+func ApplyTheme(theme Theme) tea.Cmd {
 	rawData, err := os.ReadFile("./config/apps.yaml")
 	if err != nil {
 		panic(err)
@@ -79,6 +80,7 @@ func ApplyTheme(theme Theme) {
 			}
 		}(app)
 	}
+	return nil
 }
 
 func insertTemplate(path, startString, endString, template string) {
