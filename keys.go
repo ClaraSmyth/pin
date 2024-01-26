@@ -48,9 +48,10 @@ func (k KeyMap) ShortHelp() []key.Binding {
 
 func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.New, k.Edit, k.Delete},
-		{k.Open, k.Quit, k.Back},
-		{k.ToggleHelp, k.NextPane, k.PrevPane},
-		{k.FetchThemes},
+		{k.Open, k.Edit},
+		{k.New, k.Delete},
+		{k.Quit, k.Back},
+		{k.NextPane, k.PrevPane},
+		{k.ToggleHelp, k.FetchThemes},
 	}
 }
