@@ -17,6 +17,7 @@ type Pane int
 const (
 	appPane Pane = iota
 	templatePane
+	themePane
 )
 
 type FormAction int
@@ -40,6 +41,8 @@ type Model struct {
 	selectedFile     string
 	height           int
 }
+
+type updateThemeListMsg []list.Item
 
 type updateTemplateListMsg []list.Item
 
@@ -70,6 +73,8 @@ func (m *Model) updatePane() {
 	case appPane:
 		m.pane = templatePane
 	case templatePane:
+		m.pane = themePane
+	case themePane:
 		m.pane = appPane
 	}
 }
@@ -151,6 +156,8 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			m.selectedFile = item.Path
 		case Template:
 			formName = item.Name
+		case Theme:
+			formName = item.Name
 		}
 		m.form = newForm(m.pane, m.lists[m.pane].Items())
 
@@ -201,20 +208,38 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 		case formActionDelete:
 			return DeleteTemplate(m.lists[appPane].SelectedItem().(App), m.lists[templatePane].SelectedItem().(Template).Name)
 		}
+
+	case themePane:
+		switch m.formAction {
+		case formActionCreate:
+			return CreateTheme(m.form.GetString("name"), m.lists[themePane].Items())
+
+		case formActionEdit:
+			return EditTheme(m.form.GetString("name"), m.lists[themePane].SelectedItem().(Theme))
+
+		case formActionDelete:
+			return DeleteTheme(m.lists[themePane].SelectedItem().(Theme))
+		}
 	}
+
 	return nil
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
+	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.lists[appPane].SetSize(msg.Width, msg.Height-2)
 		m.lists[templatePane].SetSize(msg.Width, msg.Height-2)
+		m.lists[themePane].SetSize(msg.Width, msg.Height-2)
 		m.height = msg.Height
 		return m, nil
+
+	case updateThemeListMsg:
+		return m, m.lists[themePane].SetItems(msg)
 
 	case updateTemplateListMsg:
 		return m, m.lists[templatePane].SetItems(msg)
@@ -289,7 +314,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	*m.lists[m.pane], cmd = m.lists[m.pane].Update(msg)
-	return m, cmd
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
@@ -307,9 +334,14 @@ func (m *Model) View() string {
 		templatesView = m.form.View()
 	}
 
+	themeView := m.lists[themePane].View()
+	if m.formActive && m.pane == themePane {
+		themeView = m.form.View()
+	}
+
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView),
+		lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView, themeView),
 		"",
 		m.help.View(m.keys),
 	)
