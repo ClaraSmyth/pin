@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -134,6 +135,7 @@ func newLists() map[Pane]*list.Model {
 	themeList.Styles.Title = styles.Title
 	themeList.SetShowHelp(false)
 	themeList.SetShowFilter(false)
+	themeList.SetSpinner(spinner.MiniDot)
 
 	listMap := make(map[Pane]*list.Model)
 
