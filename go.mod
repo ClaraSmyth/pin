@@ -3,10 +3,12 @@ module github.com/ClaraSmyth/pin
 go 1.21.5
 
 require (
+	github.com/cbroglie/mustache v1.4.0
 	github.com/charmbracelet/bubbles v0.17.1
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/huh v0.2.3
 	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/gosimple/slug v1.13.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -20,6 +22,7 @@ require (
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
+	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
