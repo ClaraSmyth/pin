@@ -6,6 +6,7 @@ import (
 
 	"github.com/ClaraSmyth/pin/filepicker"
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -66,6 +67,19 @@ func newModel() *Model {
 
 func (m *Model) Init() tea.Cmd {
 	return nil
+}
+
+func (m *Model) updateKeys() tea.Cmd {
+	switch m.pane {
+	case themePane:
+		m.keys.FetchThemes.SetEnabled(true)
+		m.keys.Edit.SetEnabled(false)
+		return nil
+	default:
+		m.keys.FetchThemes.SetEnabled(false)
+		m.keys.Edit.SetEnabled(true)
+		return nil
+	}
 }
 
 func (m *Model) selectItem() tea.Cmd {
@@ -230,9 +244,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.lists[appPane].SetSize(msg.Width, msg.Height-2)
-		m.lists[templatePane].SetSize(msg.Width, msg.Height-2)
-		m.lists[themePane].SetSize(msg.Width, msg.Height-2)
+		m.lists[appPane].SetSize(msg.Width, msg.Height-1)
+		m.lists[templatePane].SetSize(msg.Width, msg.Height-1)
+		m.lists[themePane].SetSize(msg.Width, msg.Height-1)
 		m.height = msg.Height
 		return m, nil
 
@@ -247,31 +261,38 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(m.lists[appPane].SetItems(msg.appListItems), m.lists[templatePane].SetItems(msg.templateListItems))
 
 	case tea.KeyMsg:
-
 		if m.formActive {
-			switch msg.String() {
-			case "esc":
+			switch {
+			case key.Matches(msg, m.keys.Back):
 				return m, m.handleFormSubmit()
 			}
 		}
 
 		if !m.formActive {
-			switch msg.String() {
-			case "tab":
+			switch {
+			case key.Matches(msg, m.keys.NextPane):
 				m.pane = (m.pane + 1) % 3
-			case "shift+tab":
+				return m, m.updateKeys()
+			case key.Matches(msg, m.keys.PrevPane):
 				m.pane = (m.pane + 2) % 3
-			case "n":
+				return m, m.updateKeys()
+			case key.Matches(msg, m.keys.New):
 				return m, m.triggerForm(formActionCreate)
-			case "e":
+			case key.Matches(msg, m.keys.Edit):
 				return m, m.triggerForm(formActionEdit)
-			case "x":
+			case key.Matches(msg, m.keys.Delete):
 				return m, m.triggerForm(formActionDelete)
-			case "o":
+			case key.Matches(msg, m.keys.Open):
 				return m, m.openFileEditor()
-			case "enter":
+			case key.Matches(msg, m.keys.Select):
 				return m, m.selectItem()
-			case "P":
+			case key.Matches(msg, m.keys.ToggleHelp):
+				m.help.ShowAll = !m.help.ShowAll
+				m.lists[appPane].SetHeight(m.height - lipgloss.Height(m.help.View(m.keys)))
+				m.lists[templatePane].SetHeight(m.height - lipgloss.Height(m.help.View(m.keys)))
+				m.lists[themePane].SetHeight(m.height - lipgloss.Height(m.help.View(m.keys)))
+
+			case key.Matches(msg, m.keys.FetchThemes):
 				if m.pane == themePane {
 					cmd := m.lists[themePane].StartSpinner()
 					return m, tea.Batch(GitCloneSchemes(), cmd)
@@ -322,6 +343,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	*m.lists[m.pane], cmd = m.lists[m.pane].Update(msg)
 	cmds = append(cmds, cmd)
 
+	m.help, cmd = m.help.Update(msg)
+	cmds = append(cmds, cmd)
+
 	return m, tea.Batch(cmds...)
 }
 
@@ -347,7 +371,10 @@ func (m *Model) View() string {
 
 	return lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.NewStyle().Height(m.height-1).Render(lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView, themeView)),
+		lipgloss.
+			NewStyle().
+			Height(m.height-lipgloss.Height(m.help.View(m.keys))).
+			Render(lipgloss.JoinHorizontal(lipgloss.Left, appView, templatesView, themeView)),
 		m.help.View(m.keys),
 	)
 }
