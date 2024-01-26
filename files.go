@@ -2,7 +2,9 @@ package main
 
 import (
 	"cmp"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -258,4 +260,72 @@ func DeleteTemplate(app App, filename string) tea.Cmd {
 	}
 
 	return UpdateTemplates(app.Name)
+}
+
+func GetThemes() []list.Item {
+	basePath := "./config/schemes/"
+
+	themeList := []list.Item{}
+
+	err := filepath.WalkDir(basePath, func(path string, d fs.DirEntry, err error) error {
+		if strings.Contains(d.Name(), ".yaml") {
+			themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path})
+		}
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	return themeList
+}
+
+func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
+	basePath := "./config/schemes/custom/"
+
+	if themeName == "" {
+		return nil
+	}
+
+	f, err := os.Create(basePath + themeName + ".yaml")
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	themeList = append(themeList, Theme{Name: themeName, Path: basePath + themeName + ".yaml"})
+
+	return func() tea.Msg {
+		return updateThemeListMsg(themeList)
+	}
+}
+
+func EditTheme(newThemeName string, prevTheme Theme) tea.Cmd {
+	basePath := "./config/schemes/custom/"
+
+	err := os.Rename(prevTheme.Path, basePath+newThemeName+".yaml")
+	if err != nil {
+		panic(err)
+	}
+
+	themeList := GetThemes()
+
+	return func() tea.Msg {
+		return updateThemeListMsg(themeList)
+	}
+}
+
+func DeleteTheme(theme Theme) tea.Cmd {
+	err := os.Remove(theme.Path)
+	if err != nil {
+		panic(err)
+	}
+
+	themeList := GetThemes()
+
+	return func() tea.Msg {
+		return updateThemeListMsg(themeList)
+	}
 }
