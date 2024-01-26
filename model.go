@@ -69,6 +69,34 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
+func (m *Model) updatePaneStyles() tea.Cmd {
+	switch m.pane {
+	case appPane:
+		m.lists[appPane].Styles.Title = styles.FocusedStyles.Title
+		m.lists[appPane].SetDelegate(AppDelegate{styles.FocusedStyles})
+		m.lists[templatePane].Styles.Title = styles.BaseStyles.Title
+		m.lists[templatePane].SetDelegate(TemplateDelegate{styles.BaseStyles})
+		m.lists[themePane].Styles.Title = styles.BaseStyles.Title
+		m.lists[themePane].SetDelegate(ThemeDelegate{styles.BaseStyles})
+
+	case templatePane:
+		m.lists[appPane].Styles.Title = styles.BaseStyles.Title
+		m.lists[appPane].SetDelegate(AppDelegate{styles.BaseStyles})
+		m.lists[templatePane].Styles.Title = styles.FocusedStyles.Title
+		m.lists[templatePane].SetDelegate(TemplateDelegate{styles.FocusedStyles})
+		m.lists[themePane].Styles.Title = styles.BaseStyles.Title
+		m.lists[themePane].SetDelegate(ThemeDelegate{styles.BaseStyles})
+	case themePane:
+		m.lists[appPane].Styles.Title = styles.BaseStyles.Title
+		m.lists[appPane].SetDelegate(AppDelegate{styles.BaseStyles})
+		m.lists[templatePane].Styles.Title = styles.BaseStyles.Title
+		m.lists[templatePane].SetDelegate(TemplateDelegate{styles.BaseStyles})
+		m.lists[themePane].Styles.Title = styles.FocusedStyles.Title
+		m.lists[themePane].SetDelegate(ThemeDelegate{styles.FocusedStyles})
+	}
+	return nil
+}
+
 func (m *Model) updateKeys() tea.Cmd {
 	switch m.pane {
 	case themePane:
@@ -244,9 +272,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.lists[appPane].SetSize(msg.Width, msg.Height-1)
-		m.lists[templatePane].SetSize(msg.Width, msg.Height-1)
-		m.lists[themePane].SetSize(msg.Width, msg.Height-1)
+		m.lists[appPane].SetSize(24, msg.Height-2)
+		m.lists[templatePane].SetSize(24, msg.Height-2)
+		m.lists[themePane].SetSize(msg.Width, msg.Height-2)
 		m.height = msg.Height
 		return m, nil
 
@@ -268,14 +296,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-		if !m.formActive {
+		if !m.formActive && !m.lists[m.pane].SettingFilter() {
 			switch {
 			case key.Matches(msg, m.keys.NextPane):
 				m.pane = (m.pane + 1) % 3
-				return m, m.updateKeys()
+				return m, tea.Batch(m.updateKeys(), m.updatePaneStyles())
 			case key.Matches(msg, m.keys.PrevPane):
 				m.pane = (m.pane + 2) % 3
-				return m, m.updateKeys()
+				return m, tea.Batch(m.updateKeys(), m.updatePaneStyles())
 			case key.Matches(msg, m.keys.New):
 				return m, m.triggerForm(formActionCreate)
 			case key.Matches(msg, m.keys.Edit):
@@ -350,6 +378,21 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+
+	currentList := m.lists[m.pane]
+	if currentList.SettingFilter() {
+		currentList.Title = "Find: " + currentList.FilterValue()
+	} else {
+		switch m.pane {
+		case appPane:
+			currentList.Title = "Apps"
+		case templatePane:
+			currentList.Title = "Templates"
+		case themePane:
+			currentList.Title = "Themes"
+		}
+	}
+
 	appView := m.lists[appPane].View()
 	if m.formActive && m.pane == appPane {
 		appView = m.form.View()
