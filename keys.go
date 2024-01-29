@@ -38,9 +38,9 @@ func (k KeyMap) ShortHelp() []key.Binding {
 		k.NextPane,
 		k.Select,
 		k.New,
-		k.Edit,
-		k.Open,
 		k.Delete,
+		k.Open,
+		k.Edit,
 		k.FetchThemes,
 		k.ToggleHelp,
 	}
