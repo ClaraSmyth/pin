@@ -2,6 +2,7 @@ package main
 
 import (
 	"cmp"
+	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -9,8 +10,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ClaraSmyth/pin/builder"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"gopkg.in/yaml.v3"
 )
 
@@ -275,7 +278,7 @@ func GetThemes() []list.Item {
 	themeList := []list.Item{}
 
 	err := filepath.WalkDir(basePath, func(path string, d fs.DirEntry, err error) error {
-		if strings.Contains(d.Name(), ".yaml") {
+		if strings.Contains(d.Name(), ".yaml") && strings.Contains(path, "base16") {
 			themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path})
 		}
 		return nil
@@ -342,4 +345,55 @@ func GitCloneSchemes() tea.Cmd {
 
 		return updateThemeListMsg(themeList)
 	}
+}
+
+func GetActiveColors() Colors {
+	file, err := os.ReadFile("./config/activeTheme.yaml")
+	if err != nil {
+		return DefaultColors()
+	}
+
+	scheme := builder.Scheme{}
+
+	err = yaml.Unmarshal([]byte(file), &scheme)
+	if err != nil {
+		return DefaultColors()
+	}
+
+	if len(scheme.Palette) != 16 {
+		return DefaultColors()
+	}
+
+	for i, clr := range scheme.Palette {
+		c, err := builder.ParseHexColor(clr)
+		if err != nil {
+			return DefaultColors()
+		}
+		scheme.Palette[i] = fmt.Sprintf("%02x%02x%02x", c.R, c.G, c.B)
+	}
+
+	return Colors{
+		Base00: lipgloss.Color("#" + scheme.Palette["base00"]),
+		Base01: lipgloss.Color("#" + scheme.Palette["base01"]),
+		Base02: lipgloss.Color("#" + scheme.Palette["base02"]),
+		Base03: lipgloss.Color("#" + scheme.Palette["base03"]),
+		Base04: lipgloss.Color("#" + scheme.Palette["base04"]),
+		Base05: lipgloss.Color("#" + scheme.Palette["base05"]),
+		Base06: lipgloss.Color("#" + scheme.Palette["base06"]),
+		Base07: lipgloss.Color("#" + scheme.Palette["base07"]),
+		Base08: lipgloss.Color("#" + scheme.Palette["base08"]),
+		Base09: lipgloss.Color("#" + scheme.Palette["base09"]),
+		Base0A: lipgloss.Color("#" + scheme.Palette["base0A"]),
+		Base0B: lipgloss.Color("#" + scheme.Palette["base0B"]),
+		Base0C: lipgloss.Color("#" + scheme.Palette["base0C"]),
+		Base0D: lipgloss.Color("#" + scheme.Palette["base0D"]),
+		Base0E: lipgloss.Color("#" + scheme.Palette["base0E"]),
+		Base0F: lipgloss.Color("#" + scheme.Palette["base0F"]),
+	}
+}
+
+func UpdateActiveStyles() tea.Msg {
+	colors := GetActiveColors()
+	styles := DefaultStyles(colors)
+	return updateStylesMsg(styles)
 }
