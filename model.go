@@ -41,6 +41,7 @@ type Model struct {
 	filepickerActive bool
 	selectedFile     string
 	height           int
+	styles           Styles
 }
 
 type updateThemeListMsg []list.Item
@@ -52,16 +53,28 @@ type updateAppListMsg struct {
 	templateListItems []list.Item
 }
 
+type updateStylesMsg Styles
+
 func newModel() *Model {
-	listMap := newLists()
+	colors := GetActiveColors()
+	styles := DefaultStyles(colors)
+
+	listMap := newLists(styles)
+
+	help := help.New()
+	help.Styles.ShortKey = styles.HelpStyles.Key
+	help.Styles.FullKey = styles.HelpStyles.Key
+	help.Styles.ShortDesc = styles.HelpStyles.Desc
+	help.Styles.FullDesc = styles.HelpStyles.Desc
 
 	return &Model{
 		lists:            listMap,
 		keys:             DefaultKeyMap,
-		help:             help.New(),
+		help:             help,
 		pane:             appPane,
 		formActive:       false,
 		filepickerActive: false,
+		styles:           styles,
 	}
 }
 
@@ -69,31 +82,36 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *Model) updatePaneStyles() tea.Cmd {
+func (m *Model) updateStyles() tea.Cmd {
 	switch m.pane {
 	case appPane:
-		m.lists[appPane].Styles.Title = styles.FocusedStyles.Title
-		m.lists[appPane].SetDelegate(AppDelegate{styles.FocusedStyles})
-		m.lists[templatePane].Styles.Title = styles.BaseStyles.Title
-		m.lists[templatePane].SetDelegate(TemplateDelegate{styles.BaseStyles})
-		m.lists[themePane].Styles.Title = styles.BaseStyles.Title
-		m.lists[themePane].SetDelegate(ThemeDelegate{styles.BaseStyles})
+		m.lists[appPane].Styles.Title = m.styles.FocusedStyles.Title
+		m.lists[appPane].SetDelegate(AppDelegate{m.styles.FocusedStyles})
+		m.lists[templatePane].Styles.Title = m.styles.BaseStyles.Title
+		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.BaseStyles})
+		m.lists[themePane].Styles.Title = m.styles.BaseStyles.Title
+		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.BaseStyles})
 
 	case templatePane:
-		m.lists[appPane].Styles.Title = styles.BaseStyles.Title
-		m.lists[appPane].SetDelegate(AppDelegate{styles.BaseStyles})
-		m.lists[templatePane].Styles.Title = styles.FocusedStyles.Title
-		m.lists[templatePane].SetDelegate(TemplateDelegate{styles.FocusedStyles})
-		m.lists[themePane].Styles.Title = styles.BaseStyles.Title
-		m.lists[themePane].SetDelegate(ThemeDelegate{styles.BaseStyles})
+		m.lists[appPane].Styles.Title = m.styles.BaseStyles.Title
+		m.lists[appPane].SetDelegate(AppDelegate{m.styles.BaseStyles})
+		m.lists[templatePane].Styles.Title = m.styles.FocusedStyles.Title
+		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.FocusedStyles})
+		m.lists[themePane].Styles.Title = m.styles.BaseStyles.Title
+		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.BaseStyles})
 	case themePane:
-		m.lists[appPane].Styles.Title = styles.BaseStyles.Title
-		m.lists[appPane].SetDelegate(AppDelegate{styles.BaseStyles})
-		m.lists[templatePane].Styles.Title = styles.BaseStyles.Title
-		m.lists[templatePane].SetDelegate(TemplateDelegate{styles.BaseStyles})
-		m.lists[themePane].Styles.Title = styles.FocusedStyles.Title
-		m.lists[themePane].SetDelegate(ThemeDelegate{styles.FocusedStyles})
+		m.lists[appPane].Styles.Title = m.styles.BaseStyles.Title
+		m.lists[appPane].SetDelegate(AppDelegate{m.styles.BaseStyles})
+		m.lists[templatePane].Styles.Title = m.styles.BaseStyles.Title
+		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.BaseStyles})
+		m.lists[themePane].Styles.Title = m.styles.FocusedStyles.Title
+		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.FocusedStyles})
 	}
+
+	m.help.Styles.ShortKey = m.styles.HelpStyles.Key
+	m.help.Styles.FullKey = m.styles.HelpStyles.Key
+	m.help.Styles.ShortDesc = m.styles.HelpStyles.Desc
+	m.help.Styles.FullDesc = m.styles.HelpStyles.Desc
 	return nil
 }
 
@@ -288,6 +306,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case updateAppListMsg:
 		return m, tea.Batch(m.lists[appPane].SetItems(msg.appListItems), m.lists[templatePane].SetItems(msg.templateListItems))
 
+	case updateStylesMsg:
+		m.styles = Styles(msg)
+		return m, m.updateStyles()
+
 	case tea.KeyMsg:
 		if m.formActive {
 			switch {
@@ -300,10 +322,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch {
 			case key.Matches(msg, m.keys.NextPane):
 				m.pane = (m.pane + 1) % 3
-				return m, tea.Batch(m.updateKeys(), m.updatePaneStyles())
+				return m, tea.Batch(m.updateKeys(), m.updateStyles())
 			case key.Matches(msg, m.keys.PrevPane):
 				m.pane = (m.pane + 2) % 3
-				return m, tea.Batch(m.updateKeys(), m.updatePaneStyles())
+				return m, tea.Batch(m.updateKeys(), m.updateStyles())
 			case key.Matches(msg, m.keys.New):
 				return m, m.triggerForm(formActionCreate)
 			case key.Matches(msg, m.keys.Edit):

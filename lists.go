@@ -108,7 +108,7 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 	fmt.Fprint(w, t.styles.Unselected.Render("  "+theme.Name))
 }
 
-func newLists() map[Pane]*list.Model {
+func newLists(styles Styles) map[Pane]*list.Model {
 	appList := list.New(GetApps(), AppDelegate{styles.FocusedStyles}, 0, 0)
 	appList.Title = "Apps"
 	appList.Styles.Title = styles.FocusedStyles.Title
@@ -125,7 +125,7 @@ func newLists() map[Pane]*list.Model {
 	templateList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
 	templateList.Styles.NoItems.Margin(0, 2)
 	templateList.Styles.StatusBar.Width(20)
-	appList.FilterInput.CharLimit = 12
+	templateList.FilterInput.CharLimit = 12
 	templateList.SetShowHelp(false)
 	templateList.SetShowFilter(false)
 
@@ -139,7 +139,7 @@ func newLists() map[Pane]*list.Model {
 	themeList.Styles.Title = styles.BaseStyles.Title
 	themeList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
 	themeList.Styles.NoItems.Margin(0, 2)
-	appList.FilterInput.CharLimit = 12
+	themeList.FilterInput.CharLimit = 12
 	themeList.SetShowHelp(false)
 	themeList.SetShowFilter(false)
 	themeList.SetSpinner(spinner.MiniDot)
