@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/ClaraSmyth/pin/builder"
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,10 +24,24 @@ func ApplyTheme(theme Theme) tea.Cmd {
 		panic(err)
 	}
 
-	for _, app := range appsMap {
-		go func(app App) {
+	themeData, err := os.ReadFile(theme.Path)
+	if err != nil {
+		panic(err)
+	}
 
+	scheme := builder.Scheme{}
+
+	err = yaml.Unmarshal([]byte(themeData), &scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	var wg sync.WaitGroup
+
+	for _, app := range appsMap {
+		go func(app App, wg *sync.WaitGroup) {
 			basePath := "./config/templates/"
+			wg.Add(1)
 
 			if !app.Active || app.Path == "" || app.Template == "" {
 				return
@@ -41,24 +56,32 @@ func ApplyTheme(theme Theme) tea.Cmd {
 				return
 			}
 
-			var activeTemplate string
+			var activeTemplatePath string
 
 			for _, template := range templates {
 				if basePath+app.Name+"/"+template.Name() == app.Template {
-					activeTemplate = app.Template
+					activeTemplatePath = app.Template
 				}
 
 				if strings.Split(template.Name(), ".")[0] == theme.Name {
-					activeTemplate = basePath + app.Name + "/" + template.Name()
+					activeTemplatePath = basePath + app.Name + "/" + template.Name()
 					break
 				}
 			}
 
-			if activeTemplate == "" {
+			if activeTemplatePath == "" {
 				return
 			}
 
-			data := builder.BuildTemplate(theme.Path, activeTemplate)
+			template, err := os.ReadFile(activeTemplatePath)
+			if err != nil {
+				panic(err)
+			}
+
+			data, err := builder.BuildTemplate(scheme, template)
+			if err != nil {
+				panic(err)
+			}
 
 			if app.Rewrite {
 				err = os.WriteFile(app.Path, []byte(data), os.ModePerm)
@@ -78,9 +101,20 @@ func ApplyTheme(theme Theme) tea.Cmd {
 					panic(err)
 				}
 			}
-		}(app)
+
+		}(app, &wg)
 	}
-	return nil
+
+	wg.Wait()
+
+	err = os.WriteFile("./config/activeTheme.yaml", []byte(themeData), os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+
+	return func() tea.Msg {
+		return UpdateActiveStyles()
+	}
 }
 
 func insertTemplate(path, startString, endString, template string) {
