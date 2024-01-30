@@ -1,16 +1,15 @@
 package builder
 
 import (
+	"errors"
 	"fmt"
 	"image/color"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/cbroglie/mustache"
 	"github.com/gosimple/slug"
-	"gopkg.in/yaml.v3"
 )
 
 type Scheme struct {
@@ -23,19 +22,7 @@ type Scheme struct {
 	Palette     map[string]string `yaml:"palette"`
 }
 
-func BuildTemplate(themePath string, templatePath string) string {
-	file, err := os.ReadFile(themePath)
-	if err != nil {
-		panic(err)
-	}
-
-	scheme := Scheme{}
-
-	err = yaml.Unmarshal([]byte(file), &scheme)
-	if err != nil {
-		panic(err)
-	}
-
+func BuildTemplate(scheme Scheme, template []byte) (string, error) {
 	templateVars := map[string]any{}
 
 	templateVars["scheme-name"] = scheme.Name
@@ -57,7 +44,10 @@ func BuildTemplate(themePath string, templatePath string) string {
 	}
 
 	for key, clrString := range scheme.Palette {
-		c := parseHexColor(clrString)
+		c, err := ParseHexColor(clrString)
+		if err != nil {
+			return "", err
+		}
 
 		templateVars[key+"-hex"] = fmt.Sprintf("%02x%02x%02x", c.R, c.G, c.B)
 		templateVars[key+"-hex-bgr"] = fmt.Sprintf("%02x%02x%02x", c.B, c.G, c.R)
@@ -72,20 +62,15 @@ func BuildTemplate(themePath string, templatePath string) string {
 		templateVars[key+"-dec-b"] = float32(c.B) / 255
 	}
 
-	template, err := os.ReadFile(templatePath)
-	if err != nil {
-		panic(err)
-	}
-
 	data, err := mustache.Render(string(template), templateVars)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	return data
+	return data, nil
 }
 
-func parseHexColor(hexColor string) color.RGBA {
+func ParseHexColor(hexColor string) (color.RGBA, error) {
 	if hexColor[0] == '#' {
 		hexColor = hexColor[1:]
 	}
@@ -93,7 +78,7 @@ func parseHexColor(hexColor string) color.RGBA {
 	re := regexp.MustCompile("^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$")
 
 	if !re.MatchString(hexColor) {
-		panic("Incorrect hex color")
+		return color.RGBA{}, errors.New("Invalid hex color!")
 	}
 
 	if len(hexColor) == 3 {
@@ -102,7 +87,7 @@ func parseHexColor(hexColor string) color.RGBA {
 
 	value, err := strconv.ParseUint(hexColor, 16, 32)
 	if err != nil {
-		panic(err)
+		return color.RGBA{}, err
 	}
 
 	rgba := color.RGBA{
@@ -112,7 +97,7 @@ func parseHexColor(hexColor string) color.RGBA {
 		A: 255,
 	}
 
-	return rgba
+	return rgba, nil
 }
 
 func doubleEachChar(input string) string {
