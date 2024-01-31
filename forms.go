@@ -19,7 +19,7 @@ var (
 	formApply      bool
 )
 
-func newForm(pane Pane, items []list.Item) *huh.Form {
+func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 	switch pane {
 	case appPane:
 		return huh.NewForm(
@@ -65,7 +65,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 					Negative("Cancel").
 					Value(&formFilepicker),
 			),
-		).WithShowHelp(false).WithWidth(20)
+		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
 
 	case templatePane:
 		return huh.NewForm(
@@ -97,7 +97,7 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 					Title("Apply?").
 					Value(&formApply),
 			),
-		).WithShowHelp(false).WithWidth(20)
+		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
 
 	case themePane:
 		return huh.NewForm(
@@ -129,14 +129,14 @@ func newForm(pane Pane, items []list.Item) *huh.Form {
 					Title("Apply?").
 					Value(&formApply),
 			),
-		).WithShowHelp(false).WithWidth(20)
+		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
 
 	default:
 		return nil
 	}
 }
 
-func deleteForm() *huh.Form {
+func deleteForm(theme *huh.Theme) *huh.Form {
 	return huh.NewForm(
 		huh.NewGroup(
 			huh.NewConfirm().
@@ -144,7 +144,7 @@ func deleteForm() *huh.Form {
 				Title("Are you sure?").
 				Value(&formApply),
 		),
-	).WithShowHelp(false).WithWidth(20)
+	).WithShowHelp(false).WithWidth(25).WithTheme(theme)
 }
 
 func validateFilename(filename string) bool {
