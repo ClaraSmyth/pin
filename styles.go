@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -18,29 +19,45 @@ type HelpStyles struct {
 	Desc lipgloss.Style
 }
 
+type FilePickerStyles struct {
+	DisabledCursor   lipgloss.Style
+	Cursor           lipgloss.Style
+	Symlink          lipgloss.Style
+	Directory        lipgloss.Style
+	File             lipgloss.Style
+	DisabledFile     lipgloss.Style
+	Permission       lipgloss.Style
+	Selected         lipgloss.Style
+	DisabledSelected lipgloss.Style
+	FileSize         lipgloss.Style
+	EmptyDirectory   lipgloss.Style
+}
+
 type Styles struct {
-	BaseStyles    ListStyles
-	FocusedStyles ListStyles
-	HelpStyles    HelpStyles
+	BaseStyles       ListStyles
+	FocusedStyles    ListStyles
+	HelpStyles       HelpStyles
+	FilePickerStyles FilePickerStyles
+	FormStyles       *huh.Theme
 }
 
 type Colors struct {
-	Base00 lipgloss.TerminalColor `yaml:"base00"`
-	Base01 lipgloss.TerminalColor `yaml:"base01"`
-	Base02 lipgloss.TerminalColor `yaml:"base02"`
-	Base03 lipgloss.TerminalColor `yaml:"base03"`
-	Base04 lipgloss.TerminalColor `yaml:"base04"`
-	Base05 lipgloss.TerminalColor `yaml:"base05"`
-	Base06 lipgloss.TerminalColor `yaml:"base06"`
-	Base07 lipgloss.TerminalColor `yaml:"base07"`
-	Base08 lipgloss.TerminalColor `yaml:"base08"`
-	Base09 lipgloss.TerminalColor `yaml:"base09"`
-	Base0A lipgloss.TerminalColor `yaml:"base0A"`
-	Base0B lipgloss.TerminalColor `yaml:"base0B"`
-	Base0C lipgloss.TerminalColor `yaml:"base0C"`
-	Base0D lipgloss.TerminalColor `yaml:"base0D"`
-	Base0E lipgloss.TerminalColor `yaml:"base0E"`
-	Base0F lipgloss.TerminalColor `yaml:"base0F"`
+	Base00 lipgloss.TerminalColor
+	Base01 lipgloss.TerminalColor
+	Base02 lipgloss.TerminalColor
+	Base03 lipgloss.TerminalColor
+	Base04 lipgloss.TerminalColor
+	Base05 lipgloss.TerminalColor
+	Base06 lipgloss.TerminalColor
+	Base07 lipgloss.TerminalColor
+	Base08 lipgloss.TerminalColor
+	Base09 lipgloss.TerminalColor
+	Base0A lipgloss.TerminalColor
+	Base0B lipgloss.TerminalColor
+	Base0C lipgloss.TerminalColor
+	Base0D lipgloss.TerminalColor
+	Base0E lipgloss.TerminalColor
+	Base0F lipgloss.TerminalColor
 }
 
 // Uses the base16 rose-pine theme for Dark and rose-pine-dawn theme for Light
@@ -65,21 +82,72 @@ func DefaultColors() Colors {
 	}
 }
 
+func FormStyles(colors Colors) *huh.Theme {
+	t := huh.ThemeBase16()
+
+	t.Focused.Base.BorderForeground(colors.Base0D)
+	t.Focused.Title.Foreground(colors.Base0D)
+	t.Focused.Description.Foreground(colors.Base03)
+	t.Focused.ErrorIndicator.Foreground(colors.Base08)
+	t.Focused.ErrorMessage.Foreground(colors.Base08)
+	t.Focused.SelectSelector.Foreground(colors.Base0D)
+	t.Focused.Option.Foreground(colors.Base03)
+	t.Focused.MultiSelectSelector.Foreground(colors.Base0D)
+	t.Focused.SelectedOption.Foreground(colors.Base0D)
+	t.Focused.SelectedPrefix.Foreground(colors.Base0D)
+	t.Focused.UnselectedOption.Foreground(colors.Base03)
+	t.Focused.FocusedButton.Foreground(colors.Base00).Background(colors.Base0D)
+	t.Focused.BlurredButton.Foreground(colors.Base03).Background(colors.Base00)
+
+	t.Focused.TextInput.Cursor.Foreground(colors.Base04)
+	t.Focused.TextInput.Placeholder.Foreground(colors.Base03)
+	t.Focused.TextInput.Prompt.Foreground(colors.Base0D)
+
+	t.Blurred.Base = t.Blurred.Base.BorderStyle(lipgloss.HiddenBorder())
+	t.Blurred.Title.Foreground(colors.Base03)
+	t.Blurred.TextInput.Prompt.Foreground(colors.Base03)
+	t.Blurred.TextInput.Text.Foreground(colors.Base03)
+	t.Blurred.FocusedButton.Foreground(colors.Base00).Background(colors.Base03)
+	t.Blurred.BlurredButton.Foreground(colors.Base03).Background(colors.Base00)
+
+	return t
+}
+
 func DefaultStyles(colors Colors) Styles {
 	return Styles{
 		BaseStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Background(colors.Base03).Foreground(colors.Base00).Width(20),
+			Title:      lipgloss.NewStyle().Background(colors.Base03).Foreground(colors.Base00).Width(23).Padding(0, 2).MarginRight(2),
 			Selected:   lipgloss.NewStyle().Foreground(colors.Base03),
 			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
+			TitleBar:   lipgloss.NewStyle().Width(25).Padding(0).MarginBottom(1),
+			NoItems:    lipgloss.NewStyle().Foreground(colors.Base04).Margin(0, 2),
+			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base04).Width(25).Padding(0, 2).MarginBottom(1),
 		},
 		FocusedStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Background(colors.Base0D).Foreground(colors.Base00).Width(20),
+			Title:      lipgloss.NewStyle().Background(colors.Base0D).Foreground(colors.Base00).Width(23).Padding(0, 2).MarginRight(2),
 			Selected:   lipgloss.NewStyle().Foreground(colors.Base0D),
 			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
+			TitleBar:   lipgloss.NewStyle().Width(25).Padding(0).MarginBottom(1),
+			NoItems:    lipgloss.NewStyle().Foreground(colors.Base04).Margin(0, 2),
+			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base04).Width(25).Padding(0, 2).MarginBottom(1),
 		},
 		HelpStyles: HelpStyles{
 			Key:  lipgloss.NewStyle().Foreground(colors.Base0D),
 			Desc: lipgloss.NewStyle().Foreground(colors.Base03),
 		},
+		FilePickerStyles: FilePickerStyles{
+			DisabledCursor:   lipgloss.NewStyle().Foreground(colors.Base02),
+			Cursor:           lipgloss.NewStyle().Foreground(colors.Base04),
+			Symlink:          lipgloss.NewStyle().Foreground(colors.Base0E),
+			Directory:        lipgloss.NewStyle().Foreground(colors.Base0C),
+			File:             lipgloss.NewStyle().Foreground(colors.Base03),
+			DisabledFile:     lipgloss.NewStyle().Foreground(colors.Base02),
+			Permission:       lipgloss.NewStyle().Foreground(colors.Base00),
+			Selected:         lipgloss.NewStyle().Foreground(colors.Base0D),
+			DisabledSelected: lipgloss.NewStyle().Foreground(colors.Base02),
+			FileSize:         lipgloss.NewStyle().Foreground(colors.Base00),
+			EmptyDirectory:   lipgloss.NewStyle().Foreground(colors.Base02),
+		},
+		FormStyles: FormStyles(colors),
 	}
 }
