@@ -83,28 +83,28 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) updateStyles() tea.Cmd {
+
+	for pane, list := range m.lists {
+		if pane == m.pane {
+			list.Styles = UpdateListStyles(list.Styles, m.styles, true)
+		} else {
+			list.Styles = UpdateListStyles(list.Styles, m.styles, false)
+		}
+	}
+
 	switch m.pane {
 	case appPane:
-		m.lists[appPane].Styles.Title = m.styles.FocusedStyles.Title
 		m.lists[appPane].SetDelegate(AppDelegate{m.styles.FocusedStyles})
-		m.lists[templatePane].Styles.Title = m.styles.BaseStyles.Title
 		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.BaseStyles})
-		m.lists[themePane].Styles.Title = m.styles.BaseStyles.Title
 		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.BaseStyles})
 
 	case templatePane:
-		m.lists[appPane].Styles.Title = m.styles.BaseStyles.Title
 		m.lists[appPane].SetDelegate(AppDelegate{m.styles.BaseStyles})
-		m.lists[templatePane].Styles.Title = m.styles.FocusedStyles.Title
 		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.FocusedStyles})
-		m.lists[themePane].Styles.Title = m.styles.BaseStyles.Title
 		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.BaseStyles})
 	case themePane:
-		m.lists[appPane].Styles.Title = m.styles.BaseStyles.Title
 		m.lists[appPane].SetDelegate(AppDelegate{m.styles.BaseStyles})
-		m.lists[templatePane].Styles.Title = m.styles.BaseStyles.Title
 		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.BaseStyles})
-		m.lists[themePane].Styles.Title = m.styles.FocusedStyles.Title
 		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.FocusedStyles})
 	}
 
