@@ -168,6 +168,8 @@ func (m *Model) openFileEditor() tea.Cmd {
 func (m *Model) triggerFilepicker() tea.Cmd {
 	m.filepickerActive = true
 	m.filepicker = filepicker.New()
+	m.filepicker.Styles = filepicker.Styles(m.styles.FilePickerStyles)
+	m.filepicker.Cursor = "❯"
 	m.filepicker.CurrentDirectory, _ = os.UserHomeDir()
 	if m.selectedFile != "" {
 		dir := strings.TrimRightFunc(m.selectedFile, func(r rune) bool {
@@ -176,7 +178,7 @@ func (m *Model) triggerFilepicker() tea.Cmd {
 		m.filepicker.CurrentDirectory = dir
 	}
 	m.filepicker.ShowHidden = true
-	m.filepicker.Height = m.height - 6
+	m.filepicker.Height = m.height - 4
 	return m.filepicker.Init()
 }
 
@@ -203,7 +205,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 
 	switch formAction {
 	case formActionCreate:
-		m.form = newForm(m.pane, m.lists[m.pane].Items())
+		m.form = newForm(m.pane, m.lists[m.pane].Items(), m.styles.FormStyles)
 
 	case formActionEdit:
 		switch item := selectedItem.(type) {
@@ -220,10 +222,10 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			m.formActive = false
 			return nil
 		}
-		m.form = newForm(m.pane, m.lists[m.pane].Items())
+		m.form = newForm(m.pane, m.lists[m.pane].Items(), m.styles.FormStyles)
 
 	case formActionDelete:
-		m.form = deleteForm()
+		m.form = deleteForm(m.styles.FormStyles)
 	}
 
 	return m.form.Init()
@@ -290,8 +292,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.lists[appPane].SetSize(24, msg.Height-2)
-		m.lists[templatePane].SetSize(24, msg.Height-2)
+		m.lists[appPane].SetSize(msg.Width, msg.Height-2)
+		m.lists[templatePane].SetSize(msg.Width, msg.Height-2)
 		m.lists[themePane].SetSize(msg.Width, msg.Height-2)
 		m.height = msg.Height
 		return m, nil
@@ -323,19 +325,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.NextPane):
 				m.pane = (m.pane + 1) % 3
 				return m, tea.Batch(m.updateKeys(), m.updateStyles())
+
 			case key.Matches(msg, m.keys.PrevPane):
 				m.pane = (m.pane + 2) % 3
 				return m, tea.Batch(m.updateKeys(), m.updateStyles())
+
 			case key.Matches(msg, m.keys.New):
 				return m, m.triggerForm(formActionCreate)
+
 			case key.Matches(msg, m.keys.Edit):
 				return m, m.triggerForm(formActionEdit)
+
 			case key.Matches(msg, m.keys.Delete):
 				return m, m.triggerForm(formActionDelete)
+
 			case key.Matches(msg, m.keys.Open):
 				return m, m.openFileEditor()
+
 			case key.Matches(msg, m.keys.Select):
 				return m, m.selectItem()
+
 			case key.Matches(msg, m.keys.ToggleHelp):
 				m.help.ShowAll = !m.help.ShowAll
 				m.lists[appPane].SetHeight(m.height - lipgloss.Height(m.help.View(m.keys)))
@@ -416,22 +425,37 @@ func (m *Model) View() string {
 	}
 
 	appView := m.lists[appPane].View()
-	if m.formActive && m.pane == appPane {
-		appView = m.form.View()
-		if m.filepickerActive {
-			filepickerTitle := lipgloss.NewStyle().SetString("Select Config File:").Width(20).Background(lipgloss.Color("#000000")).Render()
-			appView = lipgloss.JoinVertical(lipgloss.Top, filepickerTitle, "", lipgloss.NewStyle().Width(20).Render(m.filepicker.View()))
-		}
-	}
-
 	templatesView := m.lists[templatePane].View()
-	if m.formActive && m.pane == templatePane {
-		templatesView = m.form.View()
-	}
-
 	themeView := m.lists[themePane].View()
-	if m.formActive && m.pane == themePane {
-		themeView = m.form.View()
+
+	if m.formActive {
+		formTitleText := ""
+
+		switch m.formAction {
+		case formActionCreate:
+			formTitleText = "New "
+		case formActionEdit:
+			formTitleText = "Edit "
+		case formActionDelete:
+			formTitleText = "Delete "
+		}
+
+		formTitleStyles := m.styles.FocusedStyles.Title
+
+		switch m.pane {
+		case appPane:
+			appView = lipgloss.JoinVertical(lipgloss.Top, formTitleStyles.Render(formTitleText+"App"), "", m.form.View())
+
+			if m.filepickerActive {
+				formTitleText = "Select file:"
+				appView = lipgloss.JoinVertical(lipgloss.Top, formTitleStyles.Render(formTitleText), "", lipgloss.NewStyle().Width(25).Render(m.filepicker.View()))
+			}
+
+		case templatePane:
+			templatesView = lipgloss.JoinVertical(lipgloss.Top, formTitleStyles.Render(formTitleText+"Template"), "", m.form.View())
+		case themePane:
+			themeView = lipgloss.JoinVertical(lipgloss.Top, formTitleStyles.Render(formTitleText+"Theme"), "", m.form.View())
+		}
 	}
 
 	return lipgloss.JoinVertical(
