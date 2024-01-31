@@ -111,20 +111,14 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 func newLists(styles Styles) map[Pane]*list.Model {
 	appList := list.New(GetApps(), AppDelegate{styles.FocusedStyles}, 0, 0)
 	appList.Title = "Apps"
-	appList.Styles.Title = styles.FocusedStyles.Title
-	appList.Styles.TitleBar = styles.FocusedStyles.TitleBar
-	appList.Styles.NoItems = styles.FocusedStyles.NoItems
-	appList.Styles.StatusBar = styles.FocusedStyles.StatusBar
+	appList.Styles = UpdateListStyles(appList.Styles, styles, true)
 	appList.FilterInput.CharLimit = 12
 	appList.SetShowHelp(false)
 	appList.SetShowFilter(false)
 
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles.BaseStyles}, 0, 0)
 	templateList.Title = "Templates"
-	templateList.Styles.Title = styles.BaseStyles.Title
-	templateList.Styles.TitleBar = styles.BaseStyles.TitleBar
-	templateList.Styles.NoItems = styles.BaseStyles.NoItems
-	templateList.Styles.StatusBar = styles.BaseStyles.StatusBar
+	templateList.Styles = UpdateListStyles(appList.Styles, styles, false)
 	templateList.FilterInput.CharLimit = 12
 	templateList.SetShowHelp(false)
 	templateList.SetShowFilter(false)
@@ -136,10 +130,7 @@ func newLists(styles Styles) map[Pane]*list.Model {
 
 	themeList := list.New(GetThemes(), ThemeDelegate{styles.BaseStyles}, 0, 0)
 	themeList.Title = "Themes"
-	themeList.Styles.Title = styles.BaseStyles.Title
-	themeList.Styles.TitleBar = styles.BaseStyles.TitleBar
-	themeList.Styles.NoItems = styles.BaseStyles.NoItems
-	themeList.Styles.StatusBar = styles.BaseStyles.StatusBar
+	themeList.Styles = UpdateListStyles(appList.Styles, styles, false)
 	themeList.FilterInput.CharLimit = 12
 	themeList.SetShowHelp(false)
 	themeList.SetShowFilter(false)
@@ -152,4 +143,20 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	listMap[themePane] = &themeList
 
 	return listMap
+}
+
+func UpdateListStyles(list list.Styles, styles Styles, focused bool) list.Styles {
+	if focused {
+		list.Title = styles.FocusedStyles.Title
+		list.TitleBar = styles.FocusedStyles.TitleBar
+		list.NoItems = styles.FocusedStyles.NoItems
+		list.StatusBar = styles.FocusedStyles.StatusBar
+		return list
+	}
+
+	list.Title = styles.BaseStyles.Title
+	list.TitleBar = styles.BaseStyles.TitleBar
+	list.NoItems = styles.BaseStyles.NoItems
+	list.StatusBar = styles.BaseStyles.StatusBar
+	return list
 }
