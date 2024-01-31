@@ -112,9 +112,9 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	appList := list.New(GetApps(), AppDelegate{styles.FocusedStyles}, 0, 0)
 	appList.Title = "Apps"
 	appList.Styles.Title = styles.FocusedStyles.Title
-	appList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
-	appList.Styles.NoItems.Margin(0, 2)
-	appList.Styles.StatusBar.Width(20)
+	appList.Styles.TitleBar = styles.FocusedStyles.TitleBar
+	appList.Styles.NoItems = styles.FocusedStyles.NoItems
+	appList.Styles.StatusBar = styles.FocusedStyles.StatusBar
 	appList.FilterInput.CharLimit = 12
 	appList.SetShowHelp(false)
 	appList.SetShowFilter(false)
@@ -122,9 +122,9 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles.BaseStyles}, 0, 0)
 	templateList.Title = "Templates"
 	templateList.Styles.Title = styles.BaseStyles.Title
-	templateList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
-	templateList.Styles.NoItems.Margin(0, 2)
-	templateList.Styles.StatusBar.Width(20)
+	templateList.Styles.TitleBar = styles.BaseStyles.TitleBar
+	templateList.Styles.NoItems = styles.BaseStyles.NoItems
+	templateList.Styles.StatusBar = styles.BaseStyles.StatusBar
 	templateList.FilterInput.CharLimit = 12
 	templateList.SetShowHelp(false)
 	templateList.SetShowFilter(false)
@@ -137,8 +137,9 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	themeList := list.New(GetThemes(), ThemeDelegate{styles.BaseStyles}, 0, 0)
 	themeList.Title = "Themes"
 	themeList.Styles.Title = styles.BaseStyles.Title
-	themeList.Styles.TitleBar.Width(20).Padding(0).Margin(0, 2, 1, 2)
-	themeList.Styles.NoItems.Margin(0, 2)
+	themeList.Styles.TitleBar = styles.BaseStyles.TitleBar
+	themeList.Styles.NoItems = styles.BaseStyles.NoItems
+	themeList.Styles.StatusBar = styles.BaseStyles.StatusBar
 	themeList.FilterInput.CharLimit = 12
 	themeList.SetShowHelp(false)
 	themeList.SetShowFilter(false)
