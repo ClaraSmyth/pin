@@ -131,6 +131,9 @@ func (m *Model) updateKeys() tea.Cmd {
 func (m *Model) selectItem() tea.Cmd {
 	switch selectedItem := m.lists[m.pane].SelectedItem().(type) {
 	case App:
+		if selectedItem.Path == "" {
+			return nil
+		}
 		app := m.lists[appPane].SelectedItem().(App)
 		newApp := app
 		newApp.Active = !app.Active
