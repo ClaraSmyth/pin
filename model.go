@@ -83,7 +83,6 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) updateStyles() tea.Cmd {
-
 	for pane, list := range m.lists {
 		if pane == m.pane {
 			list.Styles = UpdateListStyles(list.Styles, m.styles, true)
@@ -107,6 +106,8 @@ func (m *Model) updateStyles() tea.Cmd {
 		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.BaseStyles})
 		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.FocusedStyles})
 	}
+
+	m.lists[themePane].Styles.StatusBar.UnsetWidth()
 
 	m.help.Styles.ShortKey = m.styles.HelpStyles.Key
 	m.help.Styles.FullKey = m.styles.HelpStyles.Key

@@ -148,6 +148,7 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	themeList := list.New(GetThemes(), ThemeDelegate{styles.BaseStyles}, 0, 0)
 	themeList.Title = "Themes"
 	themeList.Styles = UpdateListStyles(appList.Styles, styles, false)
+	themeList.Styles.StatusBar.UnsetWidth()
 	themeList.FilterInput.CharLimit = 12
 	themeList.SetShowHelp(false)
 	themeList.SetShowFilter(false)
