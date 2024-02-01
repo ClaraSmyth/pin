@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"strings"
@@ -126,10 +127,13 @@ func insertTemplate(path, startString, endString, template string) {
 	lines := strings.Split(string(data), "\n")
 
 	newData := ""
+	startFound := false
+	endFound := false
 	canInsert := true
 
 	for _, line := range lines {
 		if strings.Contains(line, startString) {
+			startFound = true
 			canInsert = false
 			newData += line + "\n"
 			newData += template + "\n"
@@ -137,12 +141,17 @@ func insertTemplate(path, startString, endString, template string) {
 		}
 
 		if strings.Contains(line, endString) {
+			endFound = true
 			canInsert = true
 		}
 
 		if canInsert {
 			newData += line + "\n"
 		}
+	}
+
+	if !startFound || !endFound {
+		panic(errors.New("couldnt find start or end point"))
 	}
 
 	err = os.WriteFile(path, []byte(strings.TrimSpace(newData)), os.ModePerm)
