@@ -107,11 +107,11 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 			return cmp.Compare(a.(App).Name, b.(App).Name)
 		})
 
-		newAppTemplates := []list.Item{}
+		templateList := []list.Item{}
 
 		return updateAppListMsg{
 			appListItems:      appList,
-			templateListItems: newAppTemplates,
+			templateListItems: templateList,
 		}
 	}
 }
@@ -146,7 +146,7 @@ func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 			}
 		}
 
-		newAppTemplates := GetTemplates(newApp.Name)
+		newAppTemplates := GetTemplates(newApp)
 
 		slices.SortFunc[[]list.Item, list.Item](newList, func(a, b list.Item) int {
 			return cmp.Compare(a.(App).Name, b.(App).Name)
@@ -194,8 +194,8 @@ func DeleteApp(prevApp App, prevList []list.Item) tea.Cmd {
 	}
 }
 
-func GetTemplates(appName string) []list.Item {
-	path := "./config/templates/" + appName
+func GetTemplates(app App) []list.Item {
+	path := "./config/templates/" + app.Name
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -210,16 +210,21 @@ func GetTemplates(appName string) []list.Item {
 		}
 
 		filename := entry.Name()
-		template := Template{Name: strings.Split(filename, ".")[0], Path: path + "/" + filename, AppPath: path}
+		active := false
+		if strings.Contains(app.Template, filename) {
+			active = true
+		}
+
+		template := Template{Name: strings.Split(filename, ".")[0], Path: path + "/" + filename, AppPath: path, Active: active}
 		templateList = append(templateList, list.Item(template))
 	}
 
 	return templateList
 }
 
-func UpdateTemplates(appName string) tea.Cmd {
+func UpdateTemplates(app App) tea.Cmd {
 	return func() tea.Msg {
-		templates := GetTemplates(appName)
+		templates := GetTemplates(app)
 		return updateTemplateListMsg(templates)
 	}
 }
@@ -230,14 +235,12 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 			return nil
 		}
 
-		f, err := os.Create("./config/templates/" + app.Name + "/" + filename + ".mustache")
+		_, err := os.Create("./config/templates/" + app.Name + "/" + filename + ".mustache")
 		if err != nil {
 			panic(err)
 		}
 
-		defer f.Close()
-
-		templates := GetTemplates(app.Name)
+		templates := GetTemplates(app)
 		return updateTemplateListMsg(templates)
 	}
 }
@@ -253,7 +256,7 @@ func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 			panic(err)
 		}
 
-		templates := GetTemplates(app.Name)
+		templates := GetTemplates(app)
 		return updateTemplateListMsg(templates)
 	}
 }
@@ -267,7 +270,7 @@ func DeleteTemplate(app App, filename string) tea.Cmd {
 			panic(err)
 		}
 
-		templates := GetTemplates(app.Name)
+		templates := GetTemplates(app)
 		return updateTemplateListMsg(templates)
 	}
 }
@@ -275,11 +278,19 @@ func DeleteTemplate(app App, filename string) tea.Cmd {
 func GetThemes() []list.Item {
 	basePath := "./config/schemes/"
 
+	activeThemePath, _ := os.ReadFile("./config/activeTheme")
+
 	themeList := []list.Item{}
 
 	err := filepath.WalkDir(basePath, func(path string, d fs.DirEntry, err error) error {
 		if strings.Contains(d.Name(), ".yaml") && strings.Contains(path, "base16") {
-			themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path})
+
+			if strings.Contains(string(activeThemePath), d.Name()) {
+				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: true})
+			} else {
+				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: false})
+			}
+
 		}
 		return nil
 	})
@@ -348,7 +359,12 @@ func GitCloneSchemes() tea.Cmd {
 }
 
 func GetActiveColors() Colors {
-	file, err := os.ReadFile("./config/activeTheme.yaml")
+	activeTheme, err := os.ReadFile("./config/activeTheme")
+	if err != nil {
+		return DefaultColors()
+	}
+
+	file, err := os.ReadFile(string(activeTheme))
 	if err != nil {
 		return DefaultColors()
 	}
