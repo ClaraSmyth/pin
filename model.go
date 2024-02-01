@@ -270,7 +270,7 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 			return EditApp(newApp, m.lists[appPane].SelectedItem().(App), m.lists[appPane].Items())
 
 		case formActionDelete:
-			return DeleteApp(m.lists[appPane].SelectedItem().(App), m.lists[appPane].Items())
+			return DeleteApp(m.lists[appPane].SelectedItem().(App), m.lists[appPane].Index(), m.lists[appPane].Items())
 		}
 
 	case templatePane:
