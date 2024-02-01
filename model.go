@@ -230,7 +230,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			formEdit = true
 			formName = item.Name
 			formHook = item.Hook
-			formRewrite = item.Rewrite
+			formRewrite = !item.Rewrite
 			m.selectedFile = item.Path
 		case Template:
 			formEdit = true
@@ -262,6 +262,7 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 		newApp := App{
 			Name:    m.form.GetString("name"),
 			Path:    m.selectedFile,
+			Hook:    m.form.GetString("hook"),
 			Rewrite: !m.form.GetBool("rewrite"),
 			Active:  false,
 		}
