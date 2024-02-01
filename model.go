@@ -135,13 +135,26 @@ func (m *Model) selectItem() tea.Cmd {
 		newApp := app
 		newApp.Active = !app.Active
 		return EditApp(newApp, app, m.lists[appPane].Items())
+
 	case Template:
 		app := m.lists[appPane].SelectedItem().(App)
 		newApp := app
 		newApp.Template = selectedItem.Path
 		return EditApp(newApp, app, m.lists[appPane].Items())
+
 	case Theme:
-		return ApplyTheme(selectedItem)
+		items := m.lists[themePane].Items()
+		for i, item := range items {
+			newItem := item.(Theme)
+			newItem.Active = false
+			if selectedItem.Name == newItem.Name {
+				newItem.Active = true
+			}
+
+			items[i] = newItem
+		}
+
+		return tea.Batch(ApplyTheme(selectedItem), m.lists[themePane].SetItems(items))
 	default:
 		return nil
 	}
