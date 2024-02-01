@@ -67,7 +67,7 @@ func BuildTemplate(scheme Scheme, template []byte) (string, error) {
 		return "", err
 	}
 
-	return data, nil
+	return strings.TrimSpace(data), nil
 }
 
 func ParseHexColor(hexColor string) (color.RGBA, error) {
