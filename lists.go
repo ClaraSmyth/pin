@@ -42,9 +42,9 @@ func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item
 		return
 	}
 
-	statusDot := "• "
+	statusDot := "● "
 	if !app.Active {
-		statusDot = "  "
+		statusDot = "○ "
 	}
 
 	if app.Path == "" || app.Template == "" {
@@ -80,9 +80,9 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 		return
 	}
 
-	statusDot := "• "
+	statusDot := "● "
 	if !template.Active {
-		statusDot = "  "
+		statusDot = "○ "
 	}
 
 	if index == m.Index() {
@@ -113,9 +113,9 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 		return
 	}
 
-	statusDot := "• "
+	statusDot := "● "
 	if !theme.Active {
-		statusDot = "  "
+		statusDot = "○ "
 	}
 
 	if index == m.Index() {
