@@ -123,20 +123,29 @@ func insertTemplate(path, startString, endString, template string) {
 		panic(err)
 	}
 
-	dataString := string(data)
+	lines := strings.Split(string(data), "\n")
 
-	startIndex := len(startString) + strings.Index(dataString, startString)
-	endIndex := strings.Index(dataString, endString)
+	newData := ""
+	canInsert := true
 
-	if startIndex == -1 || endIndex == -1 {
-		panic(err)
+	for _, line := range lines {
+		if strings.Contains(line, startString) {
+			canInsert = false
+			newData += line + "\n"
+			newData += template + "\n"
+			continue
+		}
+
+		if strings.Contains(line, endString) {
+			canInsert = true
+		}
+
+		if canInsert {
+			newData += line + "\n"
+		}
 	}
 
-	endLineStart := strings.LastIndex(dataString[:endIndex], "\n") + 1
-
-	newData := dataString[:startIndex] + "\n" + template + "\n" + dataString[endLineStart:endIndex] + dataString[endIndex:]
-
-	err = os.WriteFile(path, []byte(newData), os.ModePerm)
+	err = os.WriteFile(path, []byte(strings.TrimSpace(newData)), os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
