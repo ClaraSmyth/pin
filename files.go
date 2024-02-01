@@ -24,7 +24,7 @@ func WriteAppData(appsMap map[string]App) {
 		panic(err)
 	}
 
-	err = os.WriteFile(config.Apps, d, os.ModePerm)
+	err = os.WriteFile(config.Apps, d, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +71,7 @@ func GetApps() []list.Item {
 
 	// Append any remaining apps that have a missing dir + create a dir
 	for _, app := range appsMap {
-		err = os.Mkdir(filepath.Join(config.Templates, app.Name), os.ModePerm)
+		err = os.Mkdir(filepath.Join(config.Templates, app.Name), 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -102,7 +102,7 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 
 		WriteAppData(appsMap)
 
-		err := os.Mkdir(filepath.Join(config.Templates, newApp.Name), os.ModePerm)
+		err := os.MkdirAll(filepath.Join(config.Templates, newApp.Name), 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -113,7 +113,7 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 
 		defaultTemplate := ExtractTemplate(newApp, "START_PIN_HERE", "END_PIN_HERE")
 
-		err = os.WriteFile(filepath.Join(config.Templates, newApp.Name, "Backup.mustache"), []byte(defaultTemplate), os.ModePerm)
+		err = os.WriteFile(filepath.Join(config.Templates, newApp.Name, "Backup.mustache"), []byte(defaultTemplate), 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -298,7 +298,7 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 
 		defaultTemplate := ExtractTemplate(app, "START_PIN_HERE", "END_PIN_HERE")
 
-		err := os.WriteFile(filepath.Join(config.Templates, app.Name, filename+".mustache"), []byte(defaultTemplate), os.ModePerm)
+		err := os.WriteFile(filepath.Join(config.Templates, app.Name, filename+".mustache"), []byte(defaultTemplate), 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -380,7 +380,7 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 
 		activeTheme, _ := os.ReadFile(string(file))
 
-		err := os.WriteFile(filepath.Join(basePath, themeName+".yaml"), activeTheme, os.ModePerm)
+		err := os.WriteFile(filepath.Join(basePath, themeName+".yaml"), activeTheme, 0666)
 		if err != nil {
 			panic(err)
 		}

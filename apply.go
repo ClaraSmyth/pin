@@ -17,7 +17,7 @@ func ApplyTheme(theme Theme) tea.Cmd {
 		rawData, err := os.ReadFile(config.Apps)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), os.ModePerm)
+				err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), 0666)
 				if err != nil {
 					panic(err)
 				}
@@ -85,7 +85,7 @@ func ApplyTheme(theme Theme) tea.Cmd {
 			}
 
 			if app.Rewrite {
-				err = os.WriteFile(app.Path, []byte(data), os.ModePerm)
+				err = os.WriteFile(app.Path, []byte(data), 0666)
 				if err != nil {
 					panic(err)
 				}
@@ -102,7 +102,7 @@ func ApplyTheme(theme Theme) tea.Cmd {
 
 				updatedData := insertTemplate(string(configFileData), "START_PIN_HERE", "END_PIN_HERE", data)
 
-				err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), os.ModePerm)
+				err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), 0666)
 				if err != nil {
 					panic(err)
 				}
@@ -118,7 +118,7 @@ func ApplyTheme(theme Theme) tea.Cmd {
 
 		}
 
-		err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), os.ModePerm)
+		err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), 0666)
 		if err != nil {
 			panic(err)
 		}
