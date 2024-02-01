@@ -1,11 +1,9 @@
 package main
 
 import (
-	"errors"
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 
 	"github.com/ClaraSmyth/pin/builder"
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,93 +36,93 @@ func ApplyTheme(theme Theme) tea.Cmd {
 			panic(err)
 		}
 
-		var wg sync.WaitGroup
+		for key, app := range appsMap {
+			basePath := "./config/templates/"
 
-		for _, app := range appsMap {
-			go func(app App, wg *sync.WaitGroup) {
-				basePath := "./config/templates/"
-				wg.Add(1)
+			if !app.Active || app.Path == "" || app.Template == "" {
+				app.Active = false
+				appsMap[key] = app
+				continue
+			}
 
-				if !app.Active || app.Path == "" || app.Template == "" {
-					return
+			templates, err := os.ReadDir(basePath + app.Name)
+			if err != nil {
+				continue
+			}
+
+			var activeTemplatePath string
+
+			for _, template := range templates {
+				if basePath+app.Name+"/"+template.Name() == app.Template {
+					activeTemplatePath = app.Template
 				}
 
-				templates, err := os.ReadDir(basePath + app.Name)
-				if err != nil {
-					return
+				if strings.Split(template.Name(), ".")[0] == theme.Name {
+					activeTemplatePath = basePath + app.Name + "/" + template.Name()
+					break
 				}
+			}
 
-				if len(templates) == 0 {
-					return
-				}
+			template, err := os.ReadFile(activeTemplatePath)
+			if err != nil {
+				app.Active = false
+				app.Template = ""
+				appsMap[key] = app
+				continue
+			}
 
-				var activeTemplatePath string
+			data, err := builder.BuildTemplate(scheme, template)
+			if err != nil {
+				panic(err)
+			}
 
-				for _, template := range templates {
-					if basePath+app.Name+"/"+template.Name() == app.Template {
-						activeTemplatePath = app.Template
-					}
-
-					if strings.Split(template.Name(), ".")[0] == theme.Name {
-						activeTemplatePath = basePath + app.Name + "/" + template.Name()
-						break
-					}
-				}
-
-				if activeTemplatePath == "" {
-					return
-				}
-
-				template, err := os.ReadFile(activeTemplatePath)
+			if app.Rewrite {
+				err = os.WriteFile(app.Path, []byte(data), os.ModePerm)
 				if err != nil {
 					panic(err)
 				}
+			}
 
-				data, err := builder.BuildTemplate(scheme, template)
+			if !app.Rewrite {
+				configFileData, err := os.ReadFile(app.Path)
+				if err != nil {
+					app.Active = false
+					app.Path = ""
+					appsMap[key] = app
+					continue
+				}
+
+				updatedData := insertTemplate(string(configFileData), "START_PIN_HERE", "END_PIN_HERE", data)
+
+				err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), os.ModePerm)
 				if err != nil {
 					panic(err)
 				}
+			}
 
-				if app.Rewrite {
-					err = os.WriteFile(app.Path, []byte(data), os.ModePerm)
-					if err != nil {
-						panic(err)
-					}
+			if app.Hook != "" {
+				cmd := exec.Command("sh", "-c", app.Hook)
+				err = cmd.Run()
+				if err != nil {
+					panic(err)
 				}
+			}
 
-				if !app.Rewrite {
-					insertTemplate(app.Path, "START_PIN_HERE", "END_PIN_HERE", data)
-				}
-
-				if app.Hook != "" {
-					cmd := exec.Command("sh", "-c", app.Hook)
-					err = cmd.Run()
-					if err != nil {
-						panic(err)
-					}
-				}
-
-			}(app, &wg)
 		}
-
-		wg.Wait()
 
 		err = os.WriteFile("./config/activeTheme", []byte(theme.Path), os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
 
+		WriteAppData(appsMap)
+
 		return UpdateActiveStyles()
 	}
 }
 
-func insertTemplate(path, startString, endString, template string) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-
-	lines := strings.Split(string(data), "\n")
+func insertTemplate(fileData, startString, endString, template string) string {
+	lines := strings.Split(fileData, "\n")
 
 	newData := ""
 	startFound := false
@@ -151,11 +149,8 @@ func insertTemplate(path, startString, endString, template string) {
 	}
 
 	if !startFound || !endFound {
-		panic(errors.New("couldnt find start or end point"))
+		return fileData
 	}
 
-	err = os.WriteFile(path, []byte(strings.TrimSpace(newData)), os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
+	return newData
 }
