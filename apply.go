@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/ClaraSmyth/pin/builder"
@@ -12,8 +14,16 @@ import (
 
 func ApplyTheme(theme Theme) tea.Cmd {
 	return func() tea.Msg {
-		rawData, err := os.ReadFile("./config/apps.yaml")
+		rawData, err := os.ReadFile(config.Apps)
 		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), os.ModePerm)
+				if err != nil {
+					panic(err)
+				}
+
+				return UpdateActiveStyles()
+			}
 			panic(err)
 		}
 
@@ -37,15 +47,13 @@ func ApplyTheme(theme Theme) tea.Cmd {
 		}
 
 		for key, app := range appsMap {
-			basePath := "./config/templates/"
-
 			if !app.Active || app.Path == "" || app.Template == "" {
 				app.Active = false
 				appsMap[key] = app
 				continue
 			}
 
-			templates, err := os.ReadDir(basePath + app.Name)
+			templates, err := os.ReadDir(filepath.Join(config.Templates, app.Name))
 			if err != nil {
 				continue
 			}
@@ -53,12 +61,12 @@ func ApplyTheme(theme Theme) tea.Cmd {
 			var activeTemplatePath string
 
 			for _, template := range templates {
-				if basePath+app.Name+"/"+template.Name() == app.Template {
+				if filepath.Join(config.Templates, app.Name, template.Name()) == app.Template {
 					activeTemplatePath = app.Template
 				}
 
 				if strings.Split(template.Name(), ".")[0] == theme.Name {
-					activeTemplatePath = basePath + app.Name + "/" + template.Name()
+					activeTemplatePath = filepath.Join(config.Templates, app.Name, template.Name())
 					break
 				}
 			}
@@ -110,7 +118,7 @@ func ApplyTheme(theme Theme) tea.Cmd {
 
 		}
 
-		err = os.WriteFile("./config/activeTheme", []byte(theme.Path), os.ModePerm)
+		err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
