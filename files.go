@@ -107,7 +107,14 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 			return cmp.Compare(a.(App).Name, b.(App).Name)
 		})
 
-		templateList := []list.Item{}
+		defaultTemplate := ExtractTemplate(newApp, "START_PIN_HERE", "END_PIN_HERE")
+
+		err = os.WriteFile(("./config/templates/" + newApp.Name + "/" + "Backup" + ".mustache"), []byte(defaultTemplate), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+
+		templateList := GetTemplates(newApp)
 
 		return updateAppListMsg{
 			appListItems:      appList,
@@ -227,6 +234,49 @@ func GetTemplates(app App) []list.Item {
 	return templateList
 }
 
+func ExtractTemplate(app App, startString, endString string) string {
+	data, err := os.ReadFile(app.Path)
+	if err != nil {
+		return ""
+	}
+
+	if app.Rewrite {
+		return strings.TrimSpace(string(data))
+	}
+
+	lines := strings.Split(string(data), "\n")
+
+	newData := ""
+	startFound := false
+	endFound := false
+
+	for _, line := range lines {
+		if startFound && endFound {
+			break
+		}
+
+		if !startFound && strings.Contains(line, startString) {
+			startFound = true
+			continue
+		}
+
+		if !endFound && strings.Contains(line, endString) {
+			endFound = true
+			continue
+		}
+
+		if startFound {
+			newData += line + "\n"
+		}
+	}
+
+	if !startFound || !endFound {
+		return strings.TrimSpace(string(data))
+	}
+
+	return strings.TrimSpace(newData)
+}
+
 func UpdateTemplates(app App) tea.Cmd {
 	return func() tea.Msg {
 		templates := GetTemplates(app)
@@ -240,7 +290,9 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 			return nil
 		}
 
-		_, err := os.Create("./config/templates/" + app.Name + "/" + filename + ".mustache")
+		defaultTemplate := ExtractTemplate(app, "START_PIN_HERE", "END_PIN_HERE")
+
+		err := os.WriteFile(("./config/templates/" + app.Name + "/" + filename + ".mustache"), []byte(defaultTemplate), os.ModePerm)
 		if err != nil {
 			panic(err)
 		}
