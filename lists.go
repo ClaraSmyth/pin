@@ -16,7 +16,6 @@ type App struct {
 	Path     string `yaml:"path"`
 	Template string `yaml:"template"`
 	Hook     string `yaml:"hook"`
-	Backup   string `yaml:"backup"`
 	Active   bool   `yaml:"active"`
 	Rewrite  bool   `yaml:"rewrite"`
 }
@@ -31,24 +30,32 @@ func (a AppDelegate) Spacing() int { return 0 }
 func (a AppDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 	selectedItem := m.SelectedItem()
 	if selectedItem != nil {
-		return UpdateTemplates(selectedItem.(App).Name)
+		return UpdateTemplates(selectedItem.(App))
 	}
 
 	return nil
 }
 
 func (a AppDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
-	f, ok := item.(App)
+	app, ok := item.(App)
 	if !ok {
 		return
 	}
 
-	fmt.Fprint(w, "  ")
+	statusDot := "• "
+	if !app.Active {
+		statusDot = "  "
+	}
+
+	if app.Path == "" || app.Template == "" {
+		statusDot = "✗ "
+	}
+
 	if index == m.Index() {
-		fmt.Fprint(w, a.styles.Selected.Render("❯ "+f.Name))
+		fmt.Fprint(w, a.styles.Selected.Render("❯ "+statusDot+app.Name))
 		return
 	}
-	fmt.Fprint(w, a.styles.Unselected.Render("  "+f.Name))
+	fmt.Fprint(w, a.styles.Unselected.Render("  "+statusDot+app.Name))
 }
 
 // Template List
@@ -57,6 +64,7 @@ type Template struct {
 	Name    string
 	Path    string
 	AppPath string
+	Active  bool
 }
 
 func (t Template) FilterValue() string { return t.Name }
@@ -72,19 +80,24 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 		return
 	}
 
-	fmt.Fprint(w, "  ")
+	statusDot := "• "
+	if !template.Active {
+		statusDot = "  "
+	}
+
 	if index == m.Index() {
-		fmt.Fprint(w, t.styles.Selected.Render("❯ "+template.Name))
+		fmt.Fprint(w, t.styles.Selected.Render("❯ "+statusDot+template.Name))
 		return
 	}
-	fmt.Fprint(w, t.styles.Unselected.Render("  "+template.Name))
+	fmt.Fprint(w, t.styles.Unselected.Render("  "+statusDot+template.Name))
 }
 
 // Theme List
 
 type Theme struct {
-	Name string
-	Path string
+	Name   string
+	Path   string
+	Active bool
 }
 
 func (t Theme) FilterValue() string { return t.Name }
@@ -100,12 +113,16 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 		return
 	}
 
-	fmt.Fprint(w, "  ")
+	statusDot := "• "
+	if !theme.Active {
+		statusDot = "  "
+	}
+
 	if index == m.Index() {
-		fmt.Fprint(w, t.styles.Selected.Render("❯ "+theme.Name))
+		fmt.Fprint(w, t.styles.Selected.Render("❯ "+statusDot+theme.Name))
 		return
 	}
-	fmt.Fprint(w, t.styles.Unselected.Render("  "+theme.Name))
+	fmt.Fprint(w, t.styles.Unselected.Render("  "+statusDot+theme.Name))
 }
 
 func newLists(styles Styles) map[Pane]*list.Model {
@@ -125,7 +142,7 @@ func newLists(styles Styles) map[Pane]*list.Model {
 
 	if len(appList.Items()) != 0 {
 		selectedApp := appList.SelectedItem().(App)
-		templateList.SetItems(GetTemplates(selectedApp.Name))
+		templateList.SetItems(GetTemplates(selectedApp))
 	}
 
 	themeList := list.New(GetThemes(), ThemeDelegate{styles.BaseStyles}, 0, 0)
