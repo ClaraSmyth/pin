@@ -222,6 +222,14 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 
 	switch formAction {
 	case formActionCreate:
+		if m.pane == templatePane {
+			selectedApp := m.lists[appPane].SelectedItem()
+			if selectedApp == nil {
+				m.formActive = false
+				m.formAction = formActionCreate
+				return nil
+			}
+		}
 		m.form = newForm(m.pane, m.lists[m.pane].Items(), m.styles.FormStyles)
 
 	case formActionEdit:
