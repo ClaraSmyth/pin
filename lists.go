@@ -128,17 +128,17 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 func newLists(styles Styles) map[Pane]*list.Model {
 	appList := list.New(GetApps(), AppDelegate{styles.FocusedStyles}, 0, 0)
 	appList.Title = "Apps"
-	appList.Styles = UpdateListStyles(appList.Styles, styles, true)
-	appList.FilterInput.CharLimit = 12
+	appList.FilterInput.Prompt = "Find: "
+	appList.FilterInput.CharLimit = 14
 	appList.SetShowHelp(false)
-	appList.SetShowFilter(false)
+	UpdateListStyles(&appList, styles.FocusedStyles)
 
 	templateList := list.New([]list.Item{}, TemplateDelegate{styles.BaseStyles}, 0, 0)
 	templateList.Title = "Templates"
-	templateList.Styles = UpdateListStyles(appList.Styles, styles, false)
-	templateList.FilterInput.CharLimit = 12
+	templateList.FilterInput.Prompt = "Find: "
+	templateList.FilterInput.CharLimit = 14
 	templateList.SetShowHelp(false)
-	templateList.SetShowFilter(false)
+	UpdateListStyles(&templateList, styles.BaseStyles)
 
 	if len(appList.Items()) != 0 {
 		selectedApp := appList.SelectedItem().(App)
@@ -147,12 +147,12 @@ func newLists(styles Styles) map[Pane]*list.Model {
 
 	themeList := list.New(GetThemes(), ThemeDelegate{styles.BaseStyles}, 0, 0)
 	themeList.Title = "Themes"
-	themeList.Styles = UpdateListStyles(appList.Styles, styles, false)
-	themeList.Styles.StatusBar.UnsetWidth()
-	themeList.FilterInput.CharLimit = 12
+	themeList.FilterInput.Prompt = "Find: "
+	themeList.FilterInput.CharLimit = 14
 	themeList.SetShowHelp(false)
-	themeList.SetShowFilter(false)
 	themeList.SetSpinner(spinner.MiniDot)
+	UpdateListStyles(&themeList, styles.BaseStyles)
+	themeList.Styles.StatusBar = themeList.Styles.StatusBar.Copy().UnsetWidth()
 
 	listMap := make(map[Pane]*list.Model)
 
@@ -163,18 +163,14 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	return listMap
 }
 
-func UpdateListStyles(list list.Styles, styles Styles, focused bool) list.Styles {
-	if focused {
-		list.Title = styles.FocusedStyles.Title
-		list.TitleBar = styles.FocusedStyles.TitleBar
-		list.NoItems = styles.FocusedStyles.NoItems
-		list.StatusBar = styles.FocusedStyles.StatusBar
-		return list
-	}
+func UpdateListStyles(list *list.Model, styles ListStyles) {
+	list.Styles.Title = styles.Title
+	list.Styles.TitleBar = styles.TitleBar
+	list.Styles.NoItems = styles.NoItems
+	list.Styles.StatusBar = styles.StatusBar
 
-	list.Title = styles.BaseStyles.Title
-	list.TitleBar = styles.BaseStyles.TitleBar
-	list.NoItems = styles.BaseStyles.NoItems
-	list.StatusBar = styles.BaseStyles.StatusBar
-	return list
+	list.FilterInput.TextStyle = styles.FilterTextStyle
+	list.FilterInput.PromptStyle = styles.FilterPrompt
+	list.FilterInput.Cursor.Style = styles.FilterCursor
+	list.FilterInput.Cursor.TextStyle = styles.FilterCursorText
 }
