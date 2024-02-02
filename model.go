@@ -85,11 +85,14 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) updateStyles() tea.Cmd {
 	for pane, list := range m.lists {
 		if pane == m.pane {
-			list.Styles = UpdateListStyles(list.Styles, m.styles, true)
+			UpdateListStyles(list, m.styles.FocusedStyles)
 		} else {
-			list.Styles = UpdateListStyles(list.Styles, m.styles, false)
+			UpdateListStyles(list, m.styles.BaseStyles)
 		}
 	}
+
+	// Unset the statusbar width on last pane because it doesnt need to wrap
+	m.lists[themePane].Styles.StatusBar = m.lists[themePane].Styles.StatusBar.Copy().UnsetWidth()
 
 	switch m.pane {
 	case appPane:
@@ -106,8 +109,6 @@ func (m *Model) updateStyles() tea.Cmd {
 		m.lists[templatePane].SetDelegate(TemplateDelegate{m.styles.BaseStyles})
 		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.FocusedStyles})
 	}
-
-	m.lists[themePane].Styles.StatusBar.UnsetWidth()
 
 	m.help.Styles.ShortKey = m.styles.HelpStyles.Key
 	m.help.Styles.FullKey = m.styles.HelpStyles.Key
@@ -435,21 +436,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-
-	currentList := m.lists[m.pane]
-	if currentList.SettingFilter() {
-		currentList.Title = "Find: " + currentList.FilterValue()
-	} else {
-		switch m.pane {
-		case appPane:
-			currentList.Title = "Apps"
-		case templatePane:
-			currentList.Title = "Templates"
-		case themePane:
-			currentList.Title = "Themes"
-		}
-	}
-
 	appView := m.lists[appPane].View()
 	templatesView := m.lists[templatePane].View()
 	themeView := m.lists[themePane].View()
