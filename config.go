@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Home        string
-	Apps        string
-	Templates   string
-	Schemes     string
-	ActiveTheme string
+	Home          string
+	Apps          string
+	Templates     string
+	ActiveTheme   string
+	CustomSchemes string
+	BaseSchemes   string
 }
 
 var config = defaultConfig()
@@ -24,10 +25,11 @@ func defaultConfig() Config {
 	}
 
 	return Config{
-		Home:        filepath.Join(homePath, "pin"),
-		Apps:        filepath.Join(homePath, "pin", "apps.yaml"),
-		Templates:   filepath.Join(homePath, "pin", "templates"),
-		Schemes:     filepath.Join(homePath, "pin", "schemes"),
-		ActiveTheme: filepath.Join(homePath, "pin", "activeTheme"),
+		Home:          filepath.Join(homePath, "pin"),
+		Apps:          filepath.Join(homePath, "pin", "apps.yaml"),
+		Templates:     filepath.Join(homePath, "pin", "templates"),
+		ActiveTheme:   filepath.Join(homePath, "pin", "activeTheme"),
+		CustomSchemes: filepath.Join(homePath, "pin", "schemes"),
+		BaseSchemes:   filepath.Join(xdg.DataHome, "pin", "schemes"),
 	}
 }
