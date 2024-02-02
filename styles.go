@@ -6,12 +6,16 @@ import (
 )
 
 type ListStyles struct {
-	Title      lipgloss.Style
-	Selected   lipgloss.Style
-	Unselected lipgloss.Style
-	NoItems    lipgloss.Style
-	StatusBar  lipgloss.Style
-	TitleBar   lipgloss.Style
+	Title            lipgloss.Style
+	Selected         lipgloss.Style
+	Unselected       lipgloss.Style
+	NoItems          lipgloss.Style
+	StatusBar        lipgloss.Style
+	TitleBar         lipgloss.Style
+	FilterTextStyle  lipgloss.Style
+	FilterPrompt     lipgloss.Style
+	FilterCursor     lipgloss.Style
+	FilterCursorText lipgloss.Style
 }
 
 type HelpStyles struct {
@@ -116,20 +120,32 @@ func FormStyles(colors Colors) *huh.Theme {
 func DefaultStyles(colors Colors) Styles {
 	return Styles{
 		BaseStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Background(colors.Base03).Foreground(colors.Base00).Width(23).Padding(0, 2).MarginRight(2),
+			Title:      lipgloss.NewStyle().Foreground(colors.Base00),
 			Selected:   lipgloss.NewStyle().Foreground(colors.Base03),
 			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
-			TitleBar:   lipgloss.NewStyle().Width(25).Padding(0).MarginBottom(1),
+			TitleBar:   lipgloss.NewStyle().Background(colors.Base02).Width(25).Padding(0, 2).MarginBottom(1).MarginRight(2),
 			NoItems:    lipgloss.NewStyle().Foreground(colors.Base03).Margin(0, 2),
 			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).MarginBottom(1),
+
+			// Filter Styles
+			FilterTextStyle:  lipgloss.NewStyle().Inline(true).Background(colors.Base0D).Foreground(colors.Base00),
+			FilterPrompt:     lipgloss.NewStyle().Foreground(colors.Base00),
+			FilterCursor:     lipgloss.NewStyle().Foreground(colors.Base03).Background(colors.Base0D),
+			FilterCursorText: lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 		},
 		FocusedStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Background(colors.Base0D).Foreground(colors.Base00).Width(23).Padding(0, 2).MarginRight(2),
+			Title:      lipgloss.NewStyle().Foreground(colors.Base00),
 			Selected:   lipgloss.NewStyle().Foreground(colors.Base0D),
 			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
-			TitleBar:   lipgloss.NewStyle().Width(25).Padding(0).MarginBottom(1),
+			TitleBar:   lipgloss.NewStyle().Background(colors.Base0D).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
 			NoItems:    lipgloss.NewStyle().Foreground(colors.Base03).Margin(0, 2),
-			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).MarginBottom(1),
+			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).Margin(1),
+
+			// Filter Styles
+			FilterTextStyle:  lipgloss.NewStyle().Inline(true).Background(colors.Base0D).Foreground(colors.Base00),
+			FilterPrompt:     lipgloss.NewStyle().Foreground(colors.Base00),
+			FilterCursor:     lipgloss.NewStyle().Foreground(colors.Base03).Background(colors.Base00),
+			FilterCursorText: lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 		},
 		HelpStyles: HelpStyles{
 			Key:  lipgloss.NewStyle().Foreground(colors.Base0D),
