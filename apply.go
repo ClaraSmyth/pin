@@ -23,9 +23,15 @@ func applyTheme(theme Theme) {
 	rawData, err := os.ReadFile(config.Apps)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), 0666)
+			dir := filepath.Dir(config.ActiveTheme)
+			err := os.MkdirAll(dir, 0777)
 			if err != nil {
 				panic(err)
+			}
+
+			err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), 0666)
+			if err != nil {
+				return
 			}
 
 			return
@@ -116,10 +122,7 @@ func applyTheme(theme Theme) {
 
 		if app.Hook != "" {
 			cmd := exec.Command("sh", "-c", app.Hook)
-			err = cmd.Run()
-			if err != nil {
-				panic(err)
-			}
+			_ = cmd.Run()
 		}
 
 	}

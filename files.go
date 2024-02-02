@@ -298,7 +298,14 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 
 		defaultTemplate := ExtractTemplate(app, "START_PIN_HERE", "END_PIN_HERE")
 
-		err := os.WriteFile(filepath.Join(config.Templates, app.Name, filename+".mustache"), []byte(defaultTemplate), 0666)
+		path := filepath.Join(config.Templates, app.Name, filename+".mustache")
+		dir := filepath.Dir(path)
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			panic(err)
+		}
+
+		err = os.WriteFile(path, []byte(defaultTemplate), 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -341,16 +348,12 @@ func GetThemes() []list.Item {
 
 	themeList := []list.Item{}
 
-	err := filepath.WalkDir(config.Schemes, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(config.CustomSchemes, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if strings.Contains(d.Name(), ".yaml") {
-			if !strings.Contains(path, "base16") && !strings.Contains(path, "custom") {
-				return nil
-			}
-
 			if strings.Contains(string(activeThemePath), d.Name()) {
 				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: true})
 			} else {
@@ -361,17 +364,27 @@ func GetThemes() []list.Item {
 		return nil
 	})
 
-	if err != nil {
-		return []list.Item{}
-	}
+	_ = filepath.WalkDir(filepath.Join(config.BaseSchemes, "tinted-theming", "base16"), func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if strings.Contains(d.Name(), ".yaml") {
+			if strings.Contains(string(activeThemePath), d.Name()) {
+				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: true})
+			} else {
+				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: false})
+			}
+
+		}
+		return nil
+	})
 
 	return themeList
 }
 
 func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 	return func() tea.Msg {
-		basePath := filepath.Join(config.Schemes, "custom")
-
 		if themeName == "" {
 			return nil
 		}
@@ -380,7 +393,13 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 
 		activeTheme, _ := os.ReadFile(string(file))
 
-		err := os.WriteFile(filepath.Join(basePath, themeName+".yaml"), activeTheme, 0666)
+		path := filepath.Join(config.CustomSchemes, themeName+".yaml")
+		err := os.MkdirAll(config.CustomSchemes, 0777)
+		if err != nil {
+			panic(err)
+		}
+
+		err = os.WriteFile(path, activeTheme, 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -407,7 +426,7 @@ func DeleteTheme(theme Theme) tea.Cmd {
 func GitCloneSchemes() tea.Cmd {
 	return func() tea.Msg {
 		repo := "https://github.com/tinted-theming/schemes.git"
-		target := filepath.Join(config.Schemes, "tinted-theming")
+		target := filepath.Join(config.BaseSchemes, "tinted-theming")
 
 		err := os.RemoveAll(target)
 		if err != nil {
