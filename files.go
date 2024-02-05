@@ -24,14 +24,14 @@ func WriteAppData(appsMap map[string]App) {
 		panic(err)
 	}
 
-	err = os.WriteFile(config.Apps, d, 0666)
+	err = os.WriteFile(config.Paths.Apps, d, 0666)
 	if err != nil {
 		panic(err)
 	}
 }
 
 func GetApps() []list.Item {
-	rawData, err := os.ReadFile(config.Apps)
+	rawData, err := os.ReadFile(config.Paths.Apps)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return []list.Item{}
@@ -46,7 +46,7 @@ func GetApps() []list.Item {
 		panic(err)
 	}
 
-	entries, err := os.ReadDir(config.Templates)
+	entries, err := os.ReadDir(config.Paths.Templates)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +71,7 @@ func GetApps() []list.Item {
 
 	// Append any remaining apps that have a missing dir + create a dir
 	for _, app := range appsMap {
-		err = os.Mkdir(filepath.Join(config.Templates, app.Name), 0777)
+		err = os.Mkdir(filepath.Join(config.Paths.Templates, app.Name), 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -102,7 +102,7 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 
 		WriteAppData(appsMap)
 
-		err := os.MkdirAll(filepath.Join(config.Templates, newApp.Name), 0777)
+		err := os.MkdirAll(filepath.Join(config.Paths.Templates, newApp.Name), 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -111,9 +111,9 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 			return cmp.Compare(a.(App).Name, b.(App).Name)
 		})
 
-		defaultTemplate := ExtractTemplate(newApp, "START_PIN_HERE", "END_PIN_HERE")
+		defaultTemplate := ExtractTemplate(newApp, config.InsertStart, config.InsertEnd)
 
-		err = os.WriteFile(filepath.Join(config.Templates, newApp.Name, "Backup.mustache"), []byte(defaultTemplate), 0666)
+		err = os.WriteFile(filepath.Join(config.Paths.Templates, newApp.Name, "Backup.mustache"), []byte(defaultTemplate), 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -147,8 +147,8 @@ func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 		WriteAppData(appsMap)
 
 		if newApp.Name != prevApp.Name {
-			prevPath := filepath.Join(config.Templates, prevApp.Name)
-			newPath := filepath.Join(config.Templates, newApp.Name)
+			prevPath := filepath.Join(config.Paths.Templates, prevApp.Name)
+			newPath := filepath.Join(config.Paths.Templates, newApp.Name)
 
 			err := os.Rename(prevPath, newPath)
 			if err != nil {
@@ -187,7 +187,7 @@ func DeleteApp(prevApp App, prevIndex int, prevList []list.Item) tea.Cmd {
 
 		WriteAppData(appsMap)
 
-		err := os.RemoveAll(filepath.Join(config.Templates, prevApp.Name))
+		err := os.RemoveAll(filepath.Join(config.Paths.Templates, prevApp.Name))
 		if err != nil {
 			panic(err)
 		}
@@ -210,7 +210,7 @@ func DeleteApp(prevApp App, prevIndex int, prevList []list.Item) tea.Cmd {
 }
 
 func GetTemplates(app App) []list.Item {
-	path := filepath.Join(config.Templates, app.Name)
+	path := filepath.Join(config.Paths.Templates, app.Name)
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -296,9 +296,9 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 			return nil
 		}
 
-		defaultTemplate := ExtractTemplate(app, "START_PIN_HERE", "END_PIN_HERE")
+		defaultTemplate := ExtractTemplate(app, config.InsertStart, config.InsertEnd)
 
-		path := filepath.Join(config.Templates, app.Name, filename+".mustache")
+		path := filepath.Join(config.Paths.Templates, app.Name, filename+".mustache")
 		dir := filepath.Dir(path)
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
@@ -317,8 +317,8 @@ func CreateTemplate(app App, filename string) tea.Cmd {
 
 func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 	return func() tea.Msg {
-		prevPath := filepath.Join(config.Templates, app.Name, prevFilename+".mustache")
-		newPath := filepath.Join(config.Templates, app.Name, newFilename+".mustache")
+		prevPath := filepath.Join(config.Paths.Templates, app.Name, prevFilename+".mustache")
+		newPath := filepath.Join(config.Paths.Templates, app.Name, newFilename+".mustache")
 
 		err := os.Rename(prevPath, newPath)
 		if err != nil {
@@ -332,7 +332,7 @@ func EditTemplate(app App, prevFilename string, newFilename string) tea.Cmd {
 
 func DeleteTemplate(app App, filename string) tea.Cmd {
 	return func() tea.Msg {
-		path := filepath.Join(config.Templates, app.Name, filename+".mustache")
+		path := filepath.Join(config.Paths.Templates, app.Name, filename+".mustache")
 		err := os.Remove(path)
 		if err != nil {
 			panic(err)
@@ -344,11 +344,11 @@ func DeleteTemplate(app App, filename string) tea.Cmd {
 }
 
 func GetThemes() []list.Item {
-	activeThemePath, _ := os.ReadFile(config.ActiveTheme)
+	activeThemePath, _ := os.ReadFile(config.Paths.ActiveTheme)
 
 	themeList := []list.Item{}
 
-	_ = filepath.WalkDir(config.CustomSchemes, func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(config.Paths.CustomSchemes, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -364,7 +364,7 @@ func GetThemes() []list.Item {
 		return nil
 	})
 
-	_ = filepath.WalkDir(filepath.Join(config.BaseSchemes, "tinted-theming", "base16"), func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(filepath.Join(config.Paths.BaseSchemes, "tinted-theming", "base16"), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -389,12 +389,12 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 			return nil
 		}
 
-		file, _ := os.ReadFile(config.ActiveTheme)
+		file, _ := os.ReadFile(config.Paths.ActiveTheme)
 
 		activeTheme, _ := os.ReadFile(string(file))
 
-		path := filepath.Join(config.CustomSchemes, themeName+".yaml")
-		err := os.MkdirAll(config.CustomSchemes, 0777)
+		path := filepath.Join(config.Paths.CustomSchemes, themeName+".yaml")
+		err := os.MkdirAll(config.Paths.CustomSchemes, 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -426,7 +426,7 @@ func DeleteTheme(theme Theme) tea.Cmd {
 func GitCloneSchemes() tea.Cmd {
 	return func() tea.Msg {
 		repo := "https://github.com/tinted-theming/schemes.git"
-		target := filepath.Join(config.BaseSchemes, "tinted-theming")
+		target := filepath.Join(config.Paths.BaseSchemes, "tinted-theming")
 
 		err := os.RemoveAll(target)
 		if err != nil {
@@ -446,7 +446,7 @@ func GitCloneSchemes() tea.Cmd {
 }
 
 func GetActiveColors() Colors {
-	activeTheme, err := os.ReadFile(config.ActiveTheme)
+	activeTheme, err := os.ReadFile(config.Paths.ActiveTheme)
 	if err != nil {
 		return DefaultColors()
 	}

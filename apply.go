@@ -20,16 +20,16 @@ func ApplyThemeCmd(theme Theme) tea.Cmd {
 }
 
 func applyTheme(theme Theme) {
-	rawData, err := os.ReadFile(config.Apps)
+	rawData, err := os.ReadFile(config.Paths.Apps)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			dir := filepath.Dir(config.ActiveTheme)
+			dir := filepath.Dir(config.Paths.ActiveTheme)
 			err := os.MkdirAll(dir, 0777)
 			if err != nil {
 				panic(err)
 			}
 
-			err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), 0666)
+			err = os.WriteFile(config.Paths.ActiveTheme, []byte(theme.Path), 0666)
 			if err != nil {
 				return
 			}
@@ -65,7 +65,7 @@ func applyTheme(theme Theme) {
 			continue
 		}
 
-		templates, err := os.ReadDir(filepath.Join(config.Templates, app.Name))
+		templates, err := os.ReadDir(filepath.Join(config.Paths.Templates, app.Name))
 		if err != nil {
 			continue
 		}
@@ -73,12 +73,12 @@ func applyTheme(theme Theme) {
 		var activeTemplatePath string
 
 		for _, template := range templates {
-			if filepath.Join(config.Templates, app.Name, template.Name()) == app.Template {
+			if filepath.Join(config.Paths.Templates, app.Name, template.Name()) == app.Template {
 				activeTemplatePath = app.Template
 			}
 
 			if strings.Split(template.Name(), ".")[0] == theme.Name {
-				activeTemplatePath = filepath.Join(config.Templates, app.Name, template.Name())
+				activeTemplatePath = filepath.Join(config.Paths.Templates, app.Name, template.Name())
 				break
 			}
 		}
@@ -112,7 +112,7 @@ func applyTheme(theme Theme) {
 				continue
 			}
 
-			updatedData := insertTemplate(string(configFileData), "START_PIN_HERE", "END_PIN_HERE", data)
+			updatedData := insertTemplate(string(configFileData), config.InsertStart, config.InsertEnd, data)
 
 			err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), 0666)
 			if err != nil {
@@ -121,13 +121,16 @@ func applyTheme(theme Theme) {
 		}
 
 		if app.Hook != "" {
-			cmd := exec.Command("sh", "-c", app.Hook)
+			shellArgs := strings.Fields(config.DefaultShell)
+			cmdArgs := append(shellArgs, app.Hook)
+
+			cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 			_ = cmd.Run()
 		}
 
 	}
 
-	err = os.WriteFile(config.ActiveTheme, []byte(theme.Path), 0666)
+	err = os.WriteFile(config.Paths.ActiveTheme, []byte(theme.Path), 0666)
 	if err != nil {
 		panic(err)
 	}
