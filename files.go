@@ -92,6 +92,20 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 			return nil
 		}
 
+		backupTemplate := ExtractTemplate(newApp, config.InsertStart, config.InsertEnd)
+		backupTemplatePath := filepath.Join(config.Paths.Templates, newApp.Name, "Backup.mustache")
+		err := os.MkdirAll(filepath.Dir(backupTemplatePath), 0777)
+		if err != nil {
+			panic(err)
+		}
+
+		err = os.WriteFile(backupTemplatePath, []byte(backupTemplate), 0666)
+		if err != nil {
+			panic(err)
+		}
+
+		newApp.Template = backupTemplatePath
+		newApp.Active = true
 		appList = append(appList, newApp)
 		appsMap := make(map[string]App)
 
@@ -102,7 +116,7 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 
 		WriteAppData(appsMap)
 
-		err := os.MkdirAll(filepath.Join(config.Paths.Templates, newApp.Name), 0777)
+		err = os.MkdirAll(filepath.Join(config.Paths.Templates, newApp.Name), 0777)
 		if err != nil {
 			panic(err)
 		}
@@ -110,13 +124,6 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 		slices.SortFunc[[]list.Item, list.Item](appList, func(a, b list.Item) int {
 			return cmp.Compare(a.(App).Name, b.(App).Name)
 		})
-
-		defaultTemplate := ExtractTemplate(newApp, config.InsertStart, config.InsertEnd)
-
-		err = os.WriteFile(filepath.Join(config.Paths.Templates, newApp.Name, "Backup.mustache"), []byte(defaultTemplate), 0666)
-		if err != nil {
-			panic(err)
-		}
 
 		templateList := GetTemplates(newApp)
 
