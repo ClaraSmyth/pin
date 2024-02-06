@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/gosimple/slug"
 	"gopkg.in/yaml.v3"
 )
 
@@ -520,6 +521,7 @@ func CreateDefaultScheme(name string) []byte {
 
 	scheme.Name = name
 	scheme.System = "base16"
+	scheme.Slug = slug.Make(scheme.Name)
 	scheme.Palette = make(map[string]string)
 
 	scheme.Palette["base00"] = rgbaToHex(colors.Base00.RGBA())
