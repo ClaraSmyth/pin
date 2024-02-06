@@ -136,6 +136,8 @@ func CreateApp(newApp App, appList []list.Item) tea.Cmd {
 
 func EditApp(newApp App, prevApp App, prevList []list.Item) tea.Cmd {
 	return func() tea.Msg {
+		newApp.Template = prevApp.Template
+		newApp.Active = prevApp.Active
 		newList := []list.Item{newApp}
 		appsMap := make(map[string]App)
 		appsMap[newApp.Name] = newApp

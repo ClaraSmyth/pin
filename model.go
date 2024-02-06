@@ -274,7 +274,6 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 			Path:    m.selectedFile,
 			Hook:    m.form.GetString("hook"),
 			Rewrite: !m.form.GetBool("rewrite"),
-			Active:  false,
 		}
 
 		switch m.formAction {
