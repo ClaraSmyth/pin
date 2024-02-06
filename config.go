@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
@@ -41,27 +42,19 @@ func readConfig() Config {
 	configFile, err := os.ReadFile(filepath.Join(homePath, "pin", "config.yaml"))
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			c := defaultConfig()
-
 			err = os.MkdirAll(filepath.Join(homePath, "pin"), 0777)
 			if err != nil {
 				panic(err)
 			}
 
-			configYaml, err := yaml.Marshal(c)
-			if err != nil {
-				panic(err)
-			}
-
-			err = os.WriteFile(filepath.Join(homePath, "pin", "config.yaml"), configYaml, 0666)
+			err = os.WriteFile(filepath.Join(homePath, "pin", "config.yaml"), []byte(strings.TrimSpace(defaultConfigFile)), 0666)
 			if err != nil {
 				panic(err)
 
 			}
-
-			return c
+		} else {
+			panic(err)
 		}
-		panic(err)
 	}
 
 	configYaml := Config{}
@@ -94,28 +87,13 @@ func readConfig() Config {
 	return configYaml
 }
 
-func defaultConfig() Config {
-	homePath := os.Getenv("PIN_HOME")
-	if homePath == "" {
-		homePath = xdg.ConfigHome
-	}
+var defaultConfigFile = `
+# Change the default shell and any required args
+DefaultShell: sh -c
 
-	dataPath := os.Getenv("PIN_DATA")
-	if dataPath == "" {
-		dataPath = xdg.DataHome
-	}
+# Change the default start string to search for when inserting templates
+InsertStart: START_PIN_HERE
 
-	return Config{
-		DefaultShell: "sh -c",
-		InsertStart:  "START_PIN_HERE",
-		InsertEnd:    "END_PIN_HERE",
-		Paths: Paths{
-			Home:          filepath.Join(homePath, "pin"),
-			Apps:          filepath.Join(homePath, "pin", "apps.yaml"),
-			Templates:     filepath.Join(homePath, "pin", "templates"),
-			ActiveTheme:   filepath.Join(homePath, "pin", "activeTheme"),
-			CustomSchemes: filepath.Join(homePath, "pin", "schemes"),
-			BaseSchemes:   filepath.Join(dataPath, "pin", "schemes"),
-		},
-	}
-}
+#Change the default end string to search for when inserting templates
+InsertEnd: END_PIN_HERE
+`
