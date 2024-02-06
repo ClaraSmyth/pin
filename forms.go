@@ -94,7 +94,7 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 
 				huh.NewConfirm().
 					Key("apply").
-					Title("Apply?").
+					Title("Confirm?").
 					Value(&formApply),
 			),
 		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
@@ -126,7 +126,7 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 
 				huh.NewConfirm().
 					Key("apply").
-					Title("Apply?").
+					Title("Confirm?").
 					Value(&formApply),
 			),
 		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
