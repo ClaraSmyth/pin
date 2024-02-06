@@ -28,7 +28,7 @@ var DefaultKeyMap = KeyMap{
 	Open:        key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
 	Delete:      key.NewBinding(key.WithKeys("x"), key.WithHelp("x", "delete")),
 	Search:      key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
-	FetchThemes: key.NewBinding(key.WithKeys("P"), key.WithHelp("P", "fetch themes"), key.WithDisabled()),
+	FetchThemes: key.NewBinding(key.WithKeys("alt+p"), key.WithHelp("Alt+p", "fetch themes"), key.WithDisabled()),
 	ToggleHelp:  key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 }
 
@@ -40,8 +40,7 @@ func (k KeyMap) ShortHelp() []key.Binding {
 		k.New,
 		k.Delete,
 		k.Open,
-		k.Edit,
-		k.FetchThemes,
+		k.Search,
 		k.ToggleHelp,
 	}
 }
@@ -52,6 +51,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.New, k.Delete},
 		{k.Quit, k.Back},
 		{k.NextPane, k.PrevPane},
-		{k.ToggleHelp, k.FetchThemes},
+		{k.Search, k.ToggleHelp},
+		{k.FetchThemes},
 	}
 }
