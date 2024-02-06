@@ -396,9 +396,12 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 			return nil
 		}
 
-		file, _ := os.ReadFile(config.Paths.ActiveTheme)
+		activeThemePath, _ := os.ReadFile(config.Paths.ActiveTheme)
 
-		activeTheme, _ := os.ReadFile(string(file))
+		themeData, _ := os.ReadFile(string(activeThemePath))
+		if string(themeData) == "" {
+			themeData = CreateDefaultScheme(themeName)
+		}
 
 		path := filepath.Join(config.Paths.CustomSchemes, themeName+".yaml")
 		err := os.MkdirAll(config.Paths.CustomSchemes, 0777)
@@ -406,7 +409,7 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 			panic(err)
 		}
 
-		err = os.WriteFile(path, activeTheme, 0666)
+		err = os.WriteFile(path, themeData, 0666)
 		if err != nil {
 			panic(err)
 		}
@@ -437,13 +440,13 @@ func GitCloneSchemes() tea.Cmd {
 
 		err := os.RemoveAll(target)
 		if err != nil {
-			panic(err)
+			return nil
 		}
 
 		cmd := exec.Command("git", "clone", repo, target)
 		err = cmd.Run()
 		if err != nil {
-			panic(err)
+			return nil
 		}
 
 		themeList := GetThemes()
@@ -506,4 +509,43 @@ func UpdateActiveStyles() tea.Msg {
 	colors := GetActiveColors()
 	styles := DefaultStyles(colors)
 	return updateStylesMsg(styles)
+}
+
+func CreateDefaultScheme(name string) []byte {
+	colors := DefaultColors()
+
+	scheme := builder.Scheme{}
+
+	scheme.Name = name
+	scheme.System = "base16"
+	scheme.Palette = make(map[string]string)
+
+	scheme.Palette["base00"] = rgbaToHex(colors.Base00.RGBA())
+	scheme.Palette["base01"] = rgbaToHex(colors.Base01.RGBA())
+	scheme.Palette["base02"] = rgbaToHex(colors.Base02.RGBA())
+	scheme.Palette["base03"] = rgbaToHex(colors.Base03.RGBA())
+	scheme.Palette["base04"] = rgbaToHex(colors.Base04.RGBA())
+	scheme.Palette["base05"] = rgbaToHex(colors.Base05.RGBA())
+	scheme.Palette["base06"] = rgbaToHex(colors.Base06.RGBA())
+	scheme.Palette["base07"] = rgbaToHex(colors.Base07.RGBA())
+	scheme.Palette["base08"] = rgbaToHex(colors.Base08.RGBA())
+	scheme.Palette["base09"] = rgbaToHex(colors.Base09.RGBA())
+	scheme.Palette["base0A"] = rgbaToHex(colors.Base0A.RGBA())
+	scheme.Palette["base0B"] = rgbaToHex(colors.Base0B.RGBA())
+	scheme.Palette["base0C"] = rgbaToHex(colors.Base0C.RGBA())
+	scheme.Palette["base0D"] = rgbaToHex(colors.Base0D.RGBA())
+	scheme.Palette["base0E"] = rgbaToHex(colors.Base0E.RGBA())
+	scheme.Palette["base0F"] = rgbaToHex(colors.Base0F.RGBA())
+
+	themeData, err := yaml.Marshal(scheme)
+	if err != nil {
+		panic(err)
+	}
+
+	return themeData
+}
+
+func rgbaToHex(r, g, b, a uint32) string {
+	return fmt.Sprintf("#%02x%02x%02x", uint8(r), uint8(g), uint8(b))
+
 }
