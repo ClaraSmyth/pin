@@ -42,6 +42,7 @@ type Model struct {
 	selectedFile     string
 	height           int
 	styles           Styles
+	fetchingThemes   bool
 }
 
 type updateThemeListMsg []list.Item
@@ -326,6 +327,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case updateThemeListMsg:
+		m.fetchingThemes = false
 		m.lists[themePane].StopSpinner()
 		return m, m.lists[themePane].SetItems(msg)
 
@@ -379,9 +381,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.lists[themePane].SetHeight(m.height - lipgloss.Height(m.help.View(m.keys)))
 
 			case key.Matches(msg, m.keys.FetchThemes):
-				if m.pane == themePane {
-					cmd := m.lists[themePane].StartSpinner()
-					return m, tea.Batch(GitCloneSchemes(), cmd)
+				if m.pane == themePane && !m.fetchingThemes {
+					m.fetchingThemes = true
+					return m, tea.Batch(GitCloneSchemes(), cmd, m.lists[themePane].StartSpinner())
 				}
 			}
 		}
@@ -440,6 +442,13 @@ func (m *Model) View() string {
 	templatesView := m.lists[templatePane].View()
 	themeView := m.lists[themePane].View()
 
+	if m.fetchingThemes {
+		titleStyles := m.styles.FocusedStyles.TitleBar
+		splitTitle := strings.Split(themeView, " ")
+		newTitle := lipgloss.JoinHorizontal(lipgloss.Left, splitTitle[1], lipgloss.PlaceHorizontal(15, lipgloss.Right, splitTitle[0]))
+		themeView = titleStyles.Render(newTitle)
+	}
+
 	if m.formActive {
 		formTitleText := ""
 
@@ -452,7 +461,7 @@ func (m *Model) View() string {
 			formTitleText = "Delete "
 		}
 
-		formTitleStyles := m.styles.FocusedStyles.Title
+		formTitleStyles := m.styles.FocusedStyles.TitleBar
 
 		switch m.pane {
 		case appPane:

@@ -120,10 +120,10 @@ func FormStyles(colors Colors) *huh.Theme {
 func DefaultStyles(colors Colors) Styles {
 	return Styles{
 		BaseStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Foreground(colors.Base00),
+			Title:      lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base02),
 			Selected:   lipgloss.NewStyle().Foreground(colors.Base03),
 			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
-			TitleBar:   lipgloss.NewStyle().Background(colors.Base02).Width(25).Padding(0, 2).MarginBottom(1).MarginRight(2),
+			TitleBar:   lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base02).Width(25).Padding(0, 2).MarginBottom(1).MarginRight(2),
 			NoItems:    lipgloss.NewStyle().Foreground(colors.Base03).Margin(0, 2),
 			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).MarginBottom(1),
 
@@ -134,10 +134,10 @@ func DefaultStyles(colors Colors) Styles {
 			FilterCursorText: lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 		},
 		FocusedStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Foreground(colors.Base00),
+			Title:      lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 			Selected:   lipgloss.NewStyle().Foreground(colors.Base0D),
 			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
-			TitleBar:   lipgloss.NewStyle().Background(colors.Base0D).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
+			TitleBar:   lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
 			NoItems:    lipgloss.NewStyle().Foreground(colors.Base03).Margin(0, 2),
 			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).Margin(1),
 

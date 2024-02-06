@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // App List
@@ -153,6 +154,7 @@ func newLists(styles Styles) map[Pane]*list.Model {
 	themeList.SetSpinner(spinner.MiniDot)
 	UpdateListStyles(&themeList, styles.BaseStyles)
 	themeList.Styles.StatusBar = themeList.Styles.StatusBar.Copy().UnsetWidth()
+	themeList.Styles.Spinner.Foreground(lipgloss.ANSIColor(0))
 
 	listMap := make(map[Pane]*list.Model)
 
