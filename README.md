@@ -15,8 +15,10 @@ Alternatively feel free to open a [pull request](https://github.com/ClaraSmyth/p
 Install pin with Go
 
 ```bash
-  go install https://github.com/ClaraSmyth/pin
+  go install github.com/ClaraSmyth/pin@main
 ```
+
+Or download one of the binaries [Here](https://github.com/ClaraSmyth/pin/releases)
 
 ## Built Using
 
@@ -139,7 +141,7 @@ When creating a new theme it will use the current active theme as a base. You sh
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT](https://github.com/ClaraSmyth/pin/blob/main/LICENSE)
 
 
 ## Things to do
