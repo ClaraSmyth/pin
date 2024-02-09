@@ -134,9 +134,11 @@ In this example the **{{base06-hex}}** tag will be replaced with the correct hex
 
 Pressing **"Alt + p"** on the Themes pane will fetch all the schemes from [Tinted Theming](https://github.com/tinted-theming/home). ***Requires git be  installed**
 
-Pressing **"enter"** will select and apply the theme to the Apps config file using the active template or the template matching the theme name. Once applied the Apps hook will then be run.
+Pressing **"enter"** will select and apply the theme to the Apps config file using the active template or the template matching the theme name. Once applied the Apps hook will then be run. 
 
 When creating a new theme it will use the current active theme as a base. You should create a new theme when you want to customise it as the schemes pulled from tinted theming will be overwritten anytime you refetch them.
+
+An **✗** indicator means an error occured trying to apply that theme, make sure the theme is formatted correctly. 
 
 
 ## License
