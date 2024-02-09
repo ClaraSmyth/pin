@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,7 +21,12 @@ func main() {
 			theme := v.(Theme)
 
 			if theme.Name == args[0] {
-				applyTheme(theme)
+				err := applyTheme(theme)
+
+				if err != nil {
+					fmt.Println("There was an error applying this theme!")
+				}
+
 				return
 			}
 		}

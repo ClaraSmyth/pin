@@ -43,6 +43,10 @@ func BuildTemplate(scheme Scheme, template []byte) (string, error) {
 		templateVars["scheme-slug-underscored"] = strings.ReplaceAll(newSlug, "-", "_")
 	}
 
+	if !validScheme(scheme) {
+		return "", errors.New("Invalid Scheme")
+	}
+
 	for key, clrString := range scheme.Palette {
 		c, err := ParseHexColor(clrString)
 		if err != nil {
@@ -108,10 +112,31 @@ func doubleEachChar(input string) string {
 	return result
 }
 
-func rgbToXterm256(r, g, b uint8) int {
-	xtermIndex := (int(r) * 6 / 256) * 36
-	xtermIndex += (int(g) * 6 / 256) * 6
-	xtermIndex += int(b) * 6 / 256
-	xtermIndex += 16
-	return xtermIndex
+func validScheme(scheme Scheme) bool {
+	keys := []string{
+		"base00",
+		"base01",
+		"base02",
+		"base03",
+		"base04",
+		"base05",
+		"base06",
+		"base07",
+		"base08",
+		"base09",
+		"base0A",
+		"base0B",
+		"base0C",
+		"base0D",
+		"base0E",
+		"base0F",
+	}
+
+	for _, key := range keys {
+		if _, exists := scheme.Palette[key]; !exists {
+			return false
+		}
+	}
+
+	return true
 }

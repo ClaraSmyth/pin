@@ -14,48 +14,62 @@ import (
 
 func ApplyThemeCmd(theme Theme) tea.Cmd {
 	return func() tea.Msg {
-		applyTheme(theme)
+		err := applyTheme(theme)
+
+		if err != nil {
+			themeList := GetThemes()
+			for i, item := range themeList {
+				if item.(Theme).Path == theme.Path {
+					theme.Err = true
+					themeList[i] = theme
+					break
+				}
+
+			}
+			return updateThemeListMsg(themeList)
+		}
+
 		return UpdateActiveStyles()
 	}
 }
 
-func applyTheme(theme Theme) {
+func applyTheme(theme Theme) error {
 	rawData, err := os.ReadFile(config.Paths.Apps)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			dir := filepath.Dir(config.Paths.ActiveTheme)
 			err := os.MkdirAll(dir, 0777)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			err = os.WriteFile(config.Paths.ActiveTheme, []byte(theme.Path), 0666)
 			if err != nil {
-				return
+				return err
 			}
 
-			return
+			return nil
 		}
-		panic(err)
+		return err
 	}
 
 	appsMap := make(map[string]App)
 
 	err = yaml.Unmarshal([]byte(rawData), &appsMap)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	themeData, err := os.ReadFile(theme.Path)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	scheme := builder.Scheme{}
 
 	err = yaml.Unmarshal([]byte(themeData), &scheme)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	for key, app := range appsMap {
@@ -93,13 +107,13 @@ func applyTheme(theme Theme) {
 
 		data, err := builder.BuildTemplate(scheme, template)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		if app.Rewrite {
 			err = os.WriteFile(app.Path, []byte(data), 0666)
 			if err != nil {
-				panic(err)
+				return err
 			}
 		}
 
@@ -116,7 +130,7 @@ func applyTheme(theme Theme) {
 
 			err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), 0666)
 			if err != nil {
-				panic(err)
+				return err
 			}
 		}
 
@@ -132,10 +146,12 @@ func applyTheme(theme Theme) {
 
 	err = os.WriteFile(config.Paths.ActiveTheme, []byte(theme.Path), 0666)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	WriteAppData(appsMap)
+
+	return nil
 }
 
 func insertTemplate(fileData, startString, endString, template string) string {

@@ -56,6 +56,8 @@ type updateAppListMsg struct {
 
 type updateStylesMsg Styles
 
+type themeErrorMsg Theme
+
 func newModel() *Model {
 	colors := GetActiveColors()
 	styles := DefaultStyles(colors)

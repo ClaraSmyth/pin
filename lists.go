@@ -99,6 +99,7 @@ type Theme struct {
 	Name   string
 	Path   string
 	Active bool
+	Err    bool
 }
 
 func (t Theme) FilterValue() string { return t.Name }
@@ -117,6 +118,10 @@ func (t ThemeDelegate) Render(w io.Writer, m list.Model, index int, item list.It
 	statusDot := "● "
 	if !theme.Active {
 		statusDot = "○ "
+	}
+
+	if theme.Err {
+		statusDot = "✗ "
 	}
 
 	if index == m.Index() {
