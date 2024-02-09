@@ -281,7 +281,10 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 			return CreateApp(newApp, m.lists[appPane].Items())
 
 		case formActionEdit:
-			return EditApp(newApp, m.lists[appPane].SelectedItem().(App), m.lists[appPane].Items())
+			prevApp := m.lists[appPane].SelectedItem().(App)
+			newApp.Active = prevApp.Active
+			newApp.Template = prevApp.Template
+			return EditApp(newApp, prevApp, m.lists[appPane].Items())
 
 		case formActionDelete:
 			return DeleteApp(m.lists[appPane].SelectedItem().(App), m.lists[appPane].Index(), m.lists[appPane].Items())
