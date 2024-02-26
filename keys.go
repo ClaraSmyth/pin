@@ -10,6 +10,7 @@ type KeyMap struct {
 	Select      key.Binding
 	New         key.Binding
 	Edit        key.Binding
+	Copy        key.Binding
 	Open        key.Binding
 	Delete      key.Binding
 	Search      key.Binding
@@ -25,6 +26,7 @@ var DefaultKeyMap = KeyMap{
 	Select:      key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "select")),
 	New:         key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new")),
 	Edit:        key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "edit")),
+	Copy:        key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "copy"), key.WithDisabled()),
 	Open:        key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "open")),
 	Delete:      key.NewBinding(key.WithKeys("x"), key.WithHelp("x", "delete")),
 	Search:      key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
@@ -34,24 +36,25 @@ var DefaultKeyMap = KeyMap{
 
 func (k KeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
-		k.Back,
 		k.NextPane,
 		k.Select,
 		k.New,
+		k.Edit,
+		k.Copy,
 		k.Delete,
 		k.Open,
-		k.Search,
+		k.FetchThemes,
 		k.ToggleHelp,
 	}
 }
 
 func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Open, k.Edit},
-		{k.New, k.Delete},
-		{k.Quit, k.Back},
+		{k.Open, k.New},
+		{k.Edit, k.Copy},
+		{k.Delete, k.Back},
 		{k.NextPane, k.PrevPane},
 		{k.Search, k.ToggleHelp},
-		{k.FetchThemes},
+		{k.Quit, k.FetchThemes},
 	}
 }

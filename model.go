@@ -119,16 +119,19 @@ func (m *Model) updateStyles() tea.Cmd {
 }
 
 func (m *Model) updateKeys() tea.Cmd {
+	m.keys.FetchThemes.SetEnabled(false)
+	m.keys.Edit.SetEnabled(true)
+	m.keys.Copy.SetEnabled(false)
+
 	switch m.pane {
 	case themePane:
 		m.keys.FetchThemes.SetEnabled(true)
 		m.keys.Edit.SetEnabled(false)
-		return nil
-	default:
-		m.keys.FetchThemes.SetEnabled(false)
-		m.keys.Edit.SetEnabled(true)
-		return nil
+	case templatePane:
+		m.keys.Copy.SetEnabled(true)
 	}
+
+	return nil
 }
 
 func (m *Model) selectItem() tea.Cmd {
@@ -214,13 +217,6 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 	formApply = false
 	m.selectedFile = ""
 
-	selectedItem := m.lists[m.pane].SelectedItem()
-	if selectedItem == nil && formAction != formActionCreate {
-		m.formActive = false
-		m.formAction = formActionCreate
-		return nil
-	}
-
 	switch formAction {
 	case formActionCreate:
 		switch m.pane {
@@ -230,7 +226,6 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			selectedApp := m.lists[appPane].SelectedItem()
 			if selectedApp == nil {
 				m.formActive = false
-				m.formAction = formActionCreate
 				return nil
 			}
 			m.form = newForm(templateForm, m.lists[m.pane].Items(), m.styles.FormStyles)
@@ -239,7 +234,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 		}
 
 	case formActionEdit:
-		switch item := selectedItem.(type) {
+		switch item := m.lists[m.pane].SelectedItem().(type) {
 		case App:
 			formEdit = true
 			formName = item.Name
@@ -251,7 +246,7 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			formEdit = true
 			formName = item.Name
 			m.form = newForm(templateForm, m.lists[m.pane].Items(), m.styles.FormStyles)
-		case Theme:
+		default:
 			m.formActive = false
 			return nil
 		}
@@ -370,6 +365,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, m.keys.Edit):
 				return m, m.triggerForm(formActionEdit)
 
+			case key.Matches(msg, m.keys.Copy):
+				selectedApp := m.lists[appPane].SelectedItem().(App)
+				selectedTemplate := m.lists[templatePane].SelectedItem().(Template)
+				return m, CopyTemplate(selectedApp, selectedTemplate)
+
 			case key.Matches(msg, m.keys.Delete):
 				return m, m.triggerForm(formActionDelete)
 
@@ -386,7 +386,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.lists[themePane].SetHeight(m.height - lipgloss.Height(m.help.View(m.keys)))
 
 			case key.Matches(msg, m.keys.FetchThemes):
-				if m.pane == themePane && !m.fetchingThemes {
+				if !m.fetchingThemes {
 					m.fetchingThemes = true
 					return m, tea.Batch(GitCloneSchemes(), cmd, m.lists[themePane].StartSpinner())
 				}

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/ClaraSmyth/pin/builder"
@@ -344,6 +345,36 @@ func DeleteTemplate(app App, filename string) tea.Cmd {
 		err := os.Remove(path)
 		if err != nil {
 			panic(err)
+		}
+
+		templates := GetTemplates(app)
+		return updateTemplateListMsg(templates)
+	}
+}
+
+func CopyTemplate(app App, template Template) tea.Cmd {
+	return func() tea.Msg {
+		data, err := os.ReadFile(template.Path)
+		if err != nil {
+			panic(err)
+		}
+
+		i := 0
+
+		for {
+			i++
+
+			newFilename := template.Name + "_" + strconv.Itoa(i)
+			newPath := filepath.Join(template.AppPath, newFilename+".mustache")
+			_, err := os.Stat(newPath)
+			if errors.Is(err, fs.ErrNotExist) {
+				err = os.WriteFile(newPath, data, 0666)
+				if err != nil {
+					panic(err)
+				}
+				break
+			}
+
 		}
 
 		templates := GetTemplates(app)
