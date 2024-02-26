@@ -6,16 +6,19 @@ import (
 )
 
 type ListStyles struct {
-	Title            lipgloss.Style
-	Selected         lipgloss.Style
-	Unselected       lipgloss.Style
-	NoItems          lipgloss.Style
-	StatusBar        lipgloss.Style
-	TitleBar         lipgloss.Style
-	FilterTextStyle  lipgloss.Style
-	FilterPrompt     lipgloss.Style
-	FilterCursor     lipgloss.Style
-	FilterCursorText lipgloss.Style
+	Title                 lipgloss.Style
+	Selected              lipgloss.Style
+	Unselected            lipgloss.Style
+	NoItems               lipgloss.Style
+	StatusBar             lipgloss.Style
+	TitleBar              lipgloss.Style
+	FilterTextStyle       lipgloss.Style
+	FilterPrompt          lipgloss.Style
+	FilterCursor          lipgloss.Style
+	FilterCursorText      lipgloss.Style
+	StatusEmpty           lipgloss.Style
+	StatusBarFilterCount  lipgloss.Style
+	StatusBarActiveFilter lipgloss.Style
 }
 
 type HelpStyles struct {
@@ -64,7 +67,7 @@ type Colors struct {
 	Base0F lipgloss.TerminalColor
 }
 
-// Uses the base16 rose-pine theme for Dark and rose-pine-dawn theme for Light
+// Uses the base16 rose-pine theme for Dark and rose-pine-dawn theme for Light.
 func DefaultColors() Colors {
 	return Colors{
 		Base00: lipgloss.AdaptiveColor{Light: "#faf4ed", Dark: "#191724"},
@@ -91,28 +94,28 @@ func FormStyles(colors Colors) *huh.Theme {
 
 	t.Focused.Base.BorderForeground(colors.Base0D)
 	t.Focused.Title.Foreground(colors.Base0D)
-	t.Focused.Description.Foreground(colors.Base03)
+	t.Focused.Description.Foreground(colors.Base05)
 	t.Focused.ErrorIndicator.Foreground(colors.Base08)
 	t.Focused.ErrorMessage.Foreground(colors.Base08)
 	t.Focused.SelectSelector.Foreground(colors.Base0D)
-	t.Focused.Option.Foreground(colors.Base03)
+	t.Focused.Option.Foreground(colors.Base05)
 	t.Focused.MultiSelectSelector.Foreground(colors.Base0D)
 	t.Focused.SelectedOption.Foreground(colors.Base0D)
 	t.Focused.SelectedPrefix.Foreground(colors.Base0D)
-	t.Focused.UnselectedOption.Foreground(colors.Base03)
+	t.Focused.UnselectedOption.Foreground(colors.Base05)
 	t.Focused.FocusedButton.Foreground(colors.Base00).Background(colors.Base0D)
-	t.Focused.BlurredButton.Foreground(colors.Base03).Background(colors.Base00)
+	t.Focused.BlurredButton.Foreground(colors.Base05).Background(colors.Base00)
 
-	t.Focused.TextInput.Cursor.Foreground(colors.Base04)
-	t.Focused.TextInput.Placeholder.Foreground(colors.Base03)
+	t.Focused.TextInput.Cursor.Foreground(colors.Base05)
+	t.Focused.TextInput.Placeholder.Foreground(colors.Base05)
 	t.Focused.TextInput.Prompt.Foreground(colors.Base0D)
 
 	t.Blurred.Base = t.Blurred.Base.BorderStyle(lipgloss.HiddenBorder())
-	t.Blurred.Title.Foreground(colors.Base03)
-	t.Blurred.TextInput.Prompt.Foreground(colors.Base03)
-	t.Blurred.TextInput.Text.Foreground(colors.Base03)
-	t.Blurred.FocusedButton.Foreground(colors.Base00).Background(colors.Base03)
-	t.Blurred.BlurredButton.Foreground(colors.Base03).Background(colors.Base00)
+	t.Blurred.Title.Foreground(colors.Base05)
+	t.Blurred.TextInput.Prompt.Foreground(colors.Base05)
+	t.Blurred.TextInput.Text.Foreground(colors.Base05)
+	t.Blurred.FocusedButton.Foreground(colors.Base00).Background(colors.Base05)
+	t.Blurred.BlurredButton.Foreground(colors.Base05).Background(colors.Base00)
 
 	return t
 }
@@ -120,43 +123,49 @@ func FormStyles(colors Colors) *huh.Theme {
 func DefaultStyles(colors Colors) Styles {
 	return Styles{
 		BaseStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base03),
-			Selected:   lipgloss.NewStyle().Foreground(colors.Base03),
-			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
-			TitleBar:   lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base03).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
-			NoItems:    lipgloss.NewStyle().Foreground(colors.Base03).Margin(0, 2),
-			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).Margin(1, 0),
+			Title:                 lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base03),
+			Selected:              lipgloss.NewStyle().Foreground(colors.Base04),
+			Unselected:            lipgloss.NewStyle().Foreground(colors.Base04),
+			TitleBar:              lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base03).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
+			NoItems:               lipgloss.NewStyle().Foreground(colors.Base04).Margin(0, 2),
+			StatusBar:             lipgloss.NewStyle().Foreground(colors.Base04).Width(25).Padding(0, 2).Margin(1, 0),
+			StatusEmpty:           lipgloss.NewStyle().Foreground(colors.Base04),
+			StatusBarFilterCount:  lipgloss.NewStyle().Foreground(colors.Base04),
+			StatusBarActiveFilter: lipgloss.NewStyle().Foreground(colors.Base04),
 
 			// Filter Styles
 			FilterTextStyle:  lipgloss.NewStyle().Inline(true).Background(colors.Base0D).Foreground(colors.Base00),
 			FilterPrompt:     lipgloss.NewStyle().Foreground(colors.Base00),
-			FilterCursor:     lipgloss.NewStyle().Foreground(colors.Base03).Background(colors.Base0D),
+			FilterCursor:     lipgloss.NewStyle().Foreground(colors.Base05).Background(colors.Base0D),
 			FilterCursorText: lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 		},
 		FocusedStyles: ListStyles{
-			Title:      lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
-			Selected:   lipgloss.NewStyle().Foreground(colors.Base0D),
-			Unselected: lipgloss.NewStyle().Foreground(colors.Base03),
-			TitleBar:   lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
-			NoItems:    lipgloss.NewStyle().Foreground(colors.Base03).Margin(0, 2),
-			StatusBar:  lipgloss.NewStyle().Foreground(colors.Base05).Width(25).Padding(0, 2).Margin(1, 0),
+			Title:                 lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
+			Selected:              lipgloss.NewStyle().Foreground(colors.Base0D),
+			Unselected:            lipgloss.NewStyle().Foreground(colors.Base05),
+			TitleBar:              lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D).Width(25).Padding(0, 2).MarginRight(2).MaxHeight(1),
+			NoItems:               lipgloss.NewStyle().Foreground(colors.Base04).Margin(0, 2),
+			StatusBar:             lipgloss.NewStyle().Foreground(colors.Base04).Width(25).Padding(0, 2).Margin(1, 0),
+			StatusEmpty:           lipgloss.NewStyle().Foreground(colors.Base04),
+			StatusBarFilterCount:  lipgloss.NewStyle().Foreground(colors.Base04),
+			StatusBarActiveFilter: lipgloss.NewStyle().Foreground(colors.Base04),
 
 			// Filter Styles
 			FilterTextStyle:  lipgloss.NewStyle().Inline(true).Background(colors.Base0D).Foreground(colors.Base00),
 			FilterPrompt:     lipgloss.NewStyle().Foreground(colors.Base00),
-			FilterCursor:     lipgloss.NewStyle().Foreground(colors.Base03).Background(colors.Base00),
+			FilterCursor:     lipgloss.NewStyle().Foreground(colors.Base05).Background(colors.Base00),
 			FilterCursorText: lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 		},
 		HelpStyles: HelpStyles{
 			Key:  lipgloss.NewStyle().Foreground(colors.Base0D),
-			Desc: lipgloss.NewStyle().Foreground(colors.Base03),
+			Desc: lipgloss.NewStyle().Foreground(colors.Base05),
 		},
 		FilePickerStyles: FilePickerStyles{
 			DisabledCursor:   lipgloss.NewStyle().Foreground(colors.Base02),
-			Cursor:           lipgloss.NewStyle().Foreground(colors.Base04),
+			Cursor:           lipgloss.NewStyle().Foreground(colors.Base05),
 			Symlink:          lipgloss.NewStyle().Foreground(colors.Base0E),
 			Directory:        lipgloss.NewStyle().Foreground(colors.Base0C),
-			File:             lipgloss.NewStyle().Foreground(colors.Base03),
+			File:             lipgloss.NewStyle().Foreground(colors.Base05),
 			DisabledFile:     lipgloss.NewStyle().Foreground(colors.Base02),
 			Permission:       lipgloss.NewStyle().Foreground(colors.Base00),
 			Selected:         lipgloss.NewStyle().Foreground(colors.Base0D),

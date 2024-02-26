@@ -175,6 +175,9 @@ func UpdateListStyles(list *list.Model, styles ListStyles) {
 	list.Styles.TitleBar = styles.TitleBar
 	list.Styles.NoItems = styles.NoItems
 	list.Styles.StatusBar = styles.StatusBar
+	list.Styles.StatusEmpty = styles.StatusEmpty
+	list.Styles.StatusBarFilterCount = styles.StatusBarFilterCount
+	list.Styles.StatusBarActiveFilter = styles.StatusBarActiveFilter
 
 	list.FilterInput.TextStyle = styles.FilterTextStyle
 	list.FilterInput.PromptStyle = styles.FilterPrompt
