@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/ClaraSmyth/pin/builder"
 	tea "github.com/charmbracelet/bubbletea"
@@ -24,7 +25,6 @@ func ApplyThemeCmd(theme Theme) tea.Cmd {
 					themeList[i] = theme
 					break
 				}
-
 			}
 			return updateThemeListMsg(themeList)
 		}
@@ -133,16 +133,27 @@ func applyTheme(theme Theme) error {
 				return err
 			}
 		}
-
-		if app.Hook != "" {
-			shellArgs := strings.Fields(config.DefaultShell)
-			cmdArgs := append(shellArgs, app.Hook)
-
-			cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-			_ = cmd.Run()
-		}
-
 	}
+
+	wg := sync.WaitGroup{}
+
+	for _, app := range appsMap {
+		if app.Hook != "" {
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				shellArgs := strings.Fields(config.DefaultShell)
+				cmdArgs := append(shellArgs, app.Hook)
+
+				cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+				_ = cmd.Run()
+			}()
+		}
+	}
+
+	wg.Wait()
 
 	err = os.WriteFile(config.Paths.ActiveTheme, []byte(theme.Path), 0666)
 	if err != nil {
