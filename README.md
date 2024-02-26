@@ -2,6 +2,8 @@
 
 Pin is a TUI base16 theme manager, it applies base16 themes globally using templates.
 
+<img src="./readme-assets/example.gif" alt="Image of pin" />
+
 ## Description
 
 Pin is a TUI base16 theme manager heavily inspired by [flavours](https://github.com/Misterio77/flavours), but I wanted something more up to date with the latest [Tinted Theming](https://github.com/tinted-theming) spec. So I built pin as a way to further learn Go.
@@ -101,6 +103,8 @@ You will need to open the template and modify it by adding tags to be able to ap
 
 Pressing **"enter"** to select a template will set it as the active template for the app.
 
+Pressing **"c"** on a template will create a copy of it.
+
 Templates named after a theme will overwrite the active template when that theme is selected. This can be useful for example if you want to have an active template with dynamic tags but overwrite the base16 version of a theme with a hard coded one.
  
 <details>
@@ -138,8 +142,19 @@ Pressing **"enter"** will select and apply the theme to the Apps config file usi
 
 When creating a new theme it will use the current active theme as a base. You should create a new theme when you want to customise it as the schemes pulled from tinted theming will be overwritten anytime you refetch them.
 
-An **✗** indicator means an error occured trying to apply that theme, make sure the theme is formatted correctly. 
+An **✗** indicator means an error occured trying to apply that theme, make sure the theme is formatted correctly.
 
+**Fetching themes will overwrite existing themes!**
+If you want to customise a theme you should apply it then create a new theme with it as a base.
+Custom themes will not get reset when re-fetching. 
+
+---
+
+#### Examples
+
+<img src="./readme-assets/example.gif" alt="Image of pin" />
+
+Check out my dotfiles to see how I use pin - [Here](https://github.com/ClaraSmyth/dotfiles)
 
 ## License
 
@@ -149,4 +164,5 @@ An **✗** indicator means an error occured trying to apply that theme, make sur
 ## Things to do
 
 - Improve Error handling
-
+- Clean up code
+- Add theme hooks
