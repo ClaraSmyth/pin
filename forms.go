@@ -10,6 +10,15 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
+type FormType int
+
+const (
+	appForm FormType = iota
+	appEditForm
+	templateForm
+	themeForm
+)
+
 var (
 	formEdit       bool
 	formName       string
@@ -19,9 +28,16 @@ var (
 	formApply      bool
 )
 
-func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
-	switch pane {
-	case appPane:
+func newForm(formType FormType, items []list.Item, theme *huh.Theme) *huh.Form {
+
+	confirmNegativeText := "Cancel"
+
+	if formType == appEditForm {
+		confirmNegativeText = "Skip"
+	}
+
+	switch formType {
+	case appForm, appEditForm:
 		return huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
@@ -38,7 +54,7 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 						}
 
 						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
-							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
+							return strings.EqualFold(v.FilterValue(), str)
 						}) && !formEdit {
 							return errors.New("Already Exists!")
 						}
@@ -62,12 +78,12 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 					Key("filepicker").
 					Title("Select config file").
 					Affirmative("Select").
-					Negative("Cancel").
+					Negative(confirmNegativeText).
 					Value(&formFilepicker),
 			),
 		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
 
-	case templatePane:
+	case templateForm:
 		return huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
@@ -84,7 +100,7 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 						}
 
 						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
-							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
+							return strings.EqualFold(v.FilterValue(), str)
 						}) && !formEdit {
 							return errors.New("Already Exists!")
 						}
@@ -99,7 +115,7 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 			),
 		).WithShowHelp(false).WithWidth(25).WithTheme(theme)
 
-	case themePane:
+	case themeForm:
 		return huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
@@ -116,7 +132,7 @@ func newForm(pane Pane, items []list.Item, theme *huh.Theme) *huh.Form {
 						}
 
 						if slices.ContainsFunc[[]list.Item, list.Item](items, func(v list.Item) bool {
-							return strings.ToLower(v.FilterValue()) == strings.ToLower(str)
+							return strings.EqualFold(v.FilterValue(), str)
 						}) && !formEdit {
 							return errors.New("Already Exists!")
 						}

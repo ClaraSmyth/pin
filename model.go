@@ -56,8 +56,6 @@ type updateAppListMsg struct {
 
 type updateStylesMsg Styles
 
-type themeErrorMsg Theme
-
 func newModel() *Model {
 	colors := GetActiveColors()
 	styles := DefaultStyles(colors)
@@ -183,7 +181,6 @@ func (m *Model) openFileEditor() tea.Cmd {
 	return tea.ExecProcess(editorCmd(path), func(err error) tea.Msg {
 		return nil
 	})
-
 }
 
 func (m *Model) triggerFilepicker() tea.Cmd {
@@ -226,15 +223,20 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 
 	switch formAction {
 	case formActionCreate:
-		if m.pane == templatePane {
+		switch m.pane {
+		case appPane:
+			m.form = newForm(appForm, m.lists[m.pane].Items(), m.styles.FormStyles)
+		case templatePane:
 			selectedApp := m.lists[appPane].SelectedItem()
 			if selectedApp == nil {
 				m.formActive = false
 				m.formAction = formActionCreate
 				return nil
 			}
+			m.form = newForm(templateForm, m.lists[m.pane].Items(), m.styles.FormStyles)
+		case themePane:
+			m.form = newForm(themeForm, m.lists[m.pane].Items(), m.styles.FormStyles)
 		}
-		m.form = newForm(m.pane, m.lists[m.pane].Items(), m.styles.FormStyles)
 
 	case formActionEdit:
 		switch item := selectedItem.(type) {
@@ -244,14 +246,15 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			formHook = item.Hook
 			formRewrite = !item.Rewrite
 			m.selectedFile = item.Path
+			m.form = newForm(appEditForm, m.lists[m.pane].Items(), m.styles.FormStyles)
 		case Template:
 			formEdit = true
 			formName = item.Name
+			m.form = newForm(templateForm, m.lists[m.pane].Items(), m.styles.FormStyles)
 		case Theme:
 			m.formActive = false
 			return nil
 		}
-		m.form = newForm(m.pane, m.lists[m.pane].Items(), m.styles.FormStyles)
 
 	case formActionDelete:
 		m.form = deleteForm(m.styles.FormStyles)
@@ -261,11 +264,10 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 }
 
 func (m *Model) handleFormSubmit() tea.Cmd {
-
 	m.formActive = false
 	m.filepickerActive = false
 
-	if m.form.State != huh.StateCompleted || formApply == false {
+	if m.form.State != huh.StateCompleted || !formApply && m.selectedFile == "" {
 		return nil
 	}
 
@@ -318,7 +320,6 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -422,7 +423,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if m.form.State == huh.StateCompleted {
-			if m.pane == appPane && m.formAction != formActionDelete && m.form.GetBool("filepicker") == true {
+			if m.pane == appPane && m.formAction != formActionDelete && m.form.GetBool("filepicker") {
 				return m, m.triggerFilepicker()
 			} else {
 				return m, m.handleFormSubmit()
