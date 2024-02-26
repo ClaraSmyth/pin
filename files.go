@@ -367,7 +367,6 @@ func GetThemes() []list.Item {
 			} else {
 				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: false})
 			}
-
 		}
 		return nil
 	})
@@ -383,7 +382,6 @@ func GetThemes() []list.Item {
 			} else {
 				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: false})
 			}
-
 		}
 		return nil
 	})
@@ -549,5 +547,4 @@ func CreateDefaultScheme(name string) []byte {
 
 func rgbaToHex(r, g, b, a uint32) string {
 	return fmt.Sprintf("#%02x%02x%02x", uint8(r), uint8(g), uint8(b))
-
 }

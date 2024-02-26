@@ -50,7 +50,6 @@ func readConfig() Config {
 			err = os.WriteFile(filepath.Join(homePath, "pin", "config.yaml"), []byte(strings.TrimSpace(defaultConfigFile)), 0666)
 			if err != nil {
 				panic(err)
-
 			}
 		} else {
 			panic(err)
