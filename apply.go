@@ -141,15 +141,15 @@ func applyTheme(theme Theme) error {
 		if app.Hook != "" {
 			wg.Add(1)
 
-			go func() {
+			go func(hook string) {
 				defer wg.Done()
 
 				shellArgs := strings.Fields(config.DefaultShell)
-				cmdArgs := append(shellArgs, app.Hook)
+				cmdArgs := append(shellArgs, hook)
 
 				cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
 				_ = cmd.Run()
-			}()
+			}(app.Hook)
 		}
 	}
 
