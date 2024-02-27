@@ -63,12 +63,10 @@ Data (cloned schemes etc.): `PIN_DATA`
 
 #### Apps
 
-**You will want to start be creating a new app**
-
-Press **"n"** on the App pane
+Press **"n"** on the App pane to create a new App
 
 - **Name** - Name of the application you want to theme
-- **Hook** - Any command you want to run after updating the theme
+- **Hook** - Any command you want to run after applying the theme
 - **Write Method** - Rewrite the entire config file or insert between 2 points
 - **Select config file** - Select the apps theme config file
 
@@ -95,17 +93,26 @@ overwrite with the template
 
 #### Templates
 
+**Templates are .mustache files**
+
+You can also find lots of premade templates in the [Tinted Theming](https://github.com/tinted-theming/home) repo and by searching online for base16 templates.
+
 After creating an app a default Backup template will be created for you, this is just a copy of the config file before being modified.
 
-When creating a new template it will contain the current config file contents or the section between the 2 insert points by default.
+New templates will contain the current config file contents or the section between the 2 insert points by default.
+You will need to open the template and modify it by adding tags to be able to apply base16 themes to it.
+See the example template below for details. 
 
-You will need to open the template and modify it by adding tags to be able to apply base16 themes to it see the example below for details. You can also find lots of premade templates in the [Tinted Theming](https://github.com/tinted-theming/home) repo. **Templates are .mustache files**.
+Press **"n"** on the Template pane to create a new Templae
 
-Pressing **"enter"** to select a template will set it as the active template for the app.
+Press **"enter"** to select a template to set it as the active template for the app.
 
-Pressing **"c"** on a template will create a copy of it.
+Press **"o"** to open the template in the default editor
 
-Templates named after a theme will overwrite the active template when that theme is selected. This can be useful for example if you want to have an active template with dynamic tags but overwrite the base16 version of a theme with a hard coded one.
+Press **"c"** on a template to create a copy of it.
+
+Templates named after a theme will overwrite the active template when that theme is selected.
+This can be useful for hard coding a config for a certain theme that you dont want to apply on all themes.
  
 <details>
 <summary><b>Example Template for Zellij</b></summary>
@@ -136,19 +143,17 @@ In this example the **{{base06-hex}}** tag will be replaced with the correct hex
 
 #### Themes 
 
-Pressing **"Alt + p"** on the Themes pane will fetch all the schemes from [Tinted Theming](https://github.com/tinted-theming/home). ***Requires git be  installed**
+Pressing **"Alt + p"** on the Themes pane will fetch all the schemes from [Tinted Theming](https://github.com/tinted-theming/home). **Requires git be  installed**
 
-Pressing **"enter"** will select and apply the theme to the Apps config file using the active template or the template matching the theme name. Once applied the Apps hook will then be run. 
+**Fetching themes will overwrite any existing themes!**
+If you want to customise a theme you should apply it then create a new theme as the current active theme will be used as a base.
+Custom themes will not get reset when re-fetching. 
 
-When creating a new theme it will use the current active theme as a base. You should create a new theme when you want to customise it as the schemes pulled from tinted theming will be overwritten anytime you refetch them.
+Pressing **"enter"** will select and apply the theme. Once applied the Apps hook will then be run. 
 
-Theme hooks are commands that will be run once per theme. E.g. Change your wallpaper for that theme.
+The theme hook will be run once per theme.
 
 An **✗** indicator means an error occured trying to apply that theme, make sure the theme is formatted correctly.
-
-**Fetching themes will overwrite existing themes!**
-If you want to customise a theme you should apply it then create a new theme with it as a base.
-Custom themes will not get reset when re-fetching. 
 
 ---
 
@@ -164,9 +169,8 @@ pin 'theme name'
 
 #### Examples
 
-<img src="./readme-assets/example.gif" alt="Image of pin" />
-
 Check out my dotfiles to see how I use pin - [Here](https://github.com/ClaraSmyth/dotfiles)
+<img src="./readme-assets/example.gif" alt="Image of pin" />
 
 
 ## License
@@ -178,3 +182,4 @@ Check out my dotfiles to see how I use pin - [Here](https://github.com/ClaraSmyt
 
 - Improve Error handling
 - Clean up code
+- Fix any existing bugs
