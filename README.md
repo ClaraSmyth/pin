@@ -142,6 +142,8 @@ Pressing **"enter"** will select and apply the theme to the Apps config file usi
 
 When creating a new theme it will use the current active theme as a base. You should create a new theme when you want to customise it as the schemes pulled from tinted theming will be overwritten anytime you refetch them.
 
+Theme hooks are commands that will be run once per theme. E.g. Change your wallpaper for that theme.
+
 An **✗** indicator means an error occured trying to apply that theme, make sure the theme is formatted correctly.
 
 **Fetching themes will overwrite existing themes!**
@@ -150,11 +152,22 @@ Custom themes will not get reset when re-fetching.
 
 ---
 
+#### Cli
+
+You can run also trigger a theme change using the cli by calling pin with a theme name
+
+```bash
+pin 'theme name'
+```
+
+---
+
 #### Examples
 
 <img src="./readme-assets/example.gif" alt="Image of pin" />
 
 Check out my dotfiles to see how I use pin - [Here](https://github.com/ClaraSmyth/dotfiles)
+
 
 ## License
 
