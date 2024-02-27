@@ -63,10 +63,7 @@ func newModel() *Model {
 	listMap := newLists(styles)
 
 	help := help.New()
-	help.Styles.ShortKey = styles.HelpStyles.Key
-	help.Styles.FullKey = styles.HelpStyles.Key
-	help.Styles.ShortDesc = styles.HelpStyles.Desc
-	help.Styles.FullDesc = styles.HelpStyles.Desc
+	UpdateHelpStyles(&help, styles.HelpStyles)
 
 	return &Model{
 		lists:            listMap,
@@ -111,10 +108,7 @@ func (m *Model) updateStyles() tea.Cmd {
 		m.lists[themePane].SetDelegate(ThemeDelegate{m.styles.FocusedStyles})
 	}
 
-	m.help.Styles.ShortKey = m.styles.HelpStyles.Key
-	m.help.Styles.FullKey = m.styles.HelpStyles.Key
-	m.help.Styles.ShortDesc = m.styles.HelpStyles.Desc
-	m.help.Styles.FullDesc = m.styles.HelpStyles.Desc
+	UpdateHelpStyles(&m.help, m.styles.HelpStyles)
 	return nil
 }
 

@@ -170,18 +170,3 @@ func newLists(styles Styles) map[Pane]*list.Model {
 
 	return listMap
 }
-
-func UpdateListStyles(list *list.Model, styles ListStyles) {
-	list.Styles.Title = styles.Title
-	list.Styles.TitleBar = styles.TitleBar
-	list.Styles.NoItems = styles.NoItems
-	list.Styles.StatusBar = styles.StatusBar
-	list.Styles.StatusEmpty = styles.StatusEmpty
-	list.Styles.StatusBarFilterCount = styles.StatusBarFilterCount
-	list.Styles.StatusBarActiveFilter = styles.StatusBarActiveFilter
-
-	list.FilterInput.TextStyle = styles.FilterTextStyle
-	list.FilterInput.PromptStyle = styles.FilterPrompt
-	list.FilterInput.Cursor.Style = styles.FilterCursor
-	list.FilterInput.Cursor.TextStyle = styles.FilterCursorText
-}

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -22,8 +24,9 @@ type ListStyles struct {
 }
 
 type HelpStyles struct {
-	Key  lipgloss.Style
-	Desc lipgloss.Style
+	Key       lipgloss.Style
+	Desc      lipgloss.Style
+	Separator lipgloss.Style
 }
 
 type FilePickerStyles struct {
@@ -157,8 +160,9 @@ func DefaultStyles(colors Colors) Styles {
 			FilterCursorText: lipgloss.NewStyle().Foreground(colors.Base00).Background(colors.Base0D),
 		},
 		HelpStyles: HelpStyles{
-			Key:  lipgloss.NewStyle().Foreground(colors.Base0D),
-			Desc: lipgloss.NewStyle().Foreground(colors.Base05),
+			Key:       lipgloss.NewStyle().Foreground(colors.Base0D),
+			Desc:      lipgloss.NewStyle().Foreground(colors.Base05),
+			Separator: lipgloss.NewStyle().Foreground(colors.Base04),
 		},
 		FilePickerStyles: FilePickerStyles{
 			DisabledCursor:   lipgloss.NewStyle().Foreground(colors.Base02),
@@ -175,4 +179,28 @@ func DefaultStyles(colors Colors) Styles {
 		},
 		FormStyles: FormStyles(colors),
 	}
+}
+
+func UpdateListStyles(list *list.Model, styles ListStyles) {
+	list.Styles.Title = styles.Title
+	list.Styles.TitleBar = styles.TitleBar
+	list.Styles.NoItems = styles.NoItems
+	list.Styles.StatusBar = styles.StatusBar
+	list.Styles.StatusEmpty = styles.StatusEmpty
+	list.Styles.StatusBarFilterCount = styles.StatusBarFilterCount
+	list.Styles.StatusBarActiveFilter = styles.StatusBarActiveFilter
+
+	list.FilterInput.TextStyle = styles.FilterTextStyle
+	list.FilterInput.PromptStyle = styles.FilterPrompt
+	list.FilterInput.Cursor.Style = styles.FilterCursor
+	list.FilterInput.Cursor.TextStyle = styles.FilterCursorText
+}
+
+func UpdateHelpStyles(help *help.Model, styles HelpStyles) {
+	help.Styles.ShortKey = styles.Key
+	help.Styles.FullKey = styles.Key
+	help.Styles.ShortDesc = styles.Desc
+	help.Styles.FullDesc = styles.Desc
+	help.Styles.FullSeparator = styles.Separator
+	help.Styles.ShortSeparator = styles.Separator
 }
