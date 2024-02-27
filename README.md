@@ -165,4 +165,3 @@ Check out my dotfiles to see how I use pin - [Here](https://github.com/ClaraSmyt
 
 - Improve Error handling
 - Clean up code
-- Add theme hooks
