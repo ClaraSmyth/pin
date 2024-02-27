@@ -137,6 +137,18 @@ func applyTheme(theme Theme) error {
 
 	wg := sync.WaitGroup{}
 
+	if theme.Hook != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			shellArgs := strings.Fields(config.DefaultShell)
+			cmdArgs := append(shellArgs, theme.Hook)
+
+			cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+			_ = cmd.Run()
+		}()
+	}
+
 	for _, app := range appsMap {
 		if app.Hook != "" {
 			wg.Add(1)

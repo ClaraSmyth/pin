@@ -140,6 +140,11 @@ func newForm(formType FormType, items []list.Item, theme *huh.Theme) *huh.Form {
 						return nil
 					}),
 
+				huh.NewInput().
+					Key("hook").
+					Title("Hook").
+					Value(&formHook),
+
 				huh.NewConfirm().
 					Key("apply").
 					Title("Confirm?").

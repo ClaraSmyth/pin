@@ -22,6 +22,7 @@ type Paths struct {
 	Apps          string
 	Templates     string
 	ActiveTheme   string
+	ThemeHooks    string
 	CustomSchemes string
 	BaseSchemes   string
 }
@@ -79,6 +80,7 @@ func readConfig() Config {
 		Apps:          filepath.Join(homePath, "pin", "apps.yaml"),
 		Templates:     filepath.Join(homePath, "pin", "templates"),
 		ActiveTheme:   filepath.Join(homePath, "pin", "activeTheme"),
+		ThemeHooks:    filepath.Join(homePath, "pin", "themeHooks.yaml"),
 		CustomSchemes: filepath.Join(homePath, "pin", "schemes"),
 		BaseSchemes:   filepath.Join(dataPath, "pin", "schemes"),
 	}

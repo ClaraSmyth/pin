@@ -387,16 +387,21 @@ func GetThemes() []list.Item {
 
 	themeList := []list.Item{}
 
+	themeHooks := GetThemeHooks()
+
 	_ = filepath.WalkDir(config.Paths.CustomSchemes, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if strings.Contains(d.Name(), ".yaml") {
+
+			name := strings.Split(d.Name(), ".")[0]
+
 			if strings.Contains(string(activeThemePath), d.Name()) {
-				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: true})
+				themeList = append(themeList, Theme{Name: name, Path: path, Active: true, Hook: themeHooks[name]})
 			} else {
-				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: false})
+				themeList = append(themeList, Theme{Name: name, Path: path, Active: false, Hook: themeHooks[name]})
 			}
 		}
 		return nil
@@ -408,10 +413,13 @@ func GetThemes() []list.Item {
 		}
 
 		if strings.Contains(d.Name(), ".yaml") {
+
+			name := strings.Split(d.Name(), ".")[0]
+
 			if strings.Contains(string(activeThemePath), d.Name()) {
-				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: true})
+				themeList = append(themeList, Theme{Name: name, Path: path, Active: true, Hook: themeHooks[name]})
 			} else {
-				themeList = append(themeList, Theme{Name: strings.Split(d.Name(), ".")[0], Path: path, Active: false})
+				themeList = append(themeList, Theme{Name: name, Path: path, Active: false, Hook: themeHooks[name]})
 			}
 		}
 		return nil
@@ -450,6 +458,25 @@ func CreateTheme(themeName string, themeList []list.Item) tea.Cmd {
 	}
 }
 
+func EditTheme(prevTheme Theme, newName string, newHook string) tea.Cmd {
+	return func() tea.Msg {
+		prevPath := prevTheme.Path
+		newPath := filepath.Join(filepath.Dir(prevPath), newName+".yaml")
+
+		err := os.Rename(prevPath, newPath)
+		if err != nil {
+			panic(err)
+		}
+
+		hooks := GetThemeHooks()
+		hooks[prevTheme.Name] = newHook
+		WriteThemeHooks(hooks)
+
+		themeList := GetThemes()
+		return updateThemeListMsg(themeList)
+	}
+}
+
 func DeleteTheme(theme Theme) tea.Cmd {
 	return func() tea.Msg {
 		err := os.Remove(theme.Path)
@@ -460,6 +487,34 @@ func DeleteTheme(theme Theme) tea.Cmd {
 		themeList := GetThemes()
 
 		return updateThemeListMsg(themeList)
+	}
+}
+
+func GetThemeHooks() map[string]string {
+	themeHooksMap := make(map[string]string)
+
+	data, err := os.ReadFile(config.Paths.ThemeHooks)
+	if errors.Is(err, fs.ErrNotExist) {
+		return themeHooksMap
+	}
+
+	err = yaml.Unmarshal([]byte(data), &themeHooksMap)
+	if err != nil {
+		panic(err)
+	}
+
+	return themeHooksMap
+}
+
+func WriteThemeHooks(themeHooksMap map[string]string) {
+	d, err := yaml.Marshal(&themeHooksMap)
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.WriteFile(config.Paths.ThemeHooks, d, 0666)
+	if err != nil {
+		panic(err)
 	}
 }
 

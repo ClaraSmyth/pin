@@ -98,6 +98,7 @@ func (t TemplateDelegate) Render(w io.Writer, m list.Model, index int, item list
 type Theme struct {
 	Name   string
 	Path   string
+	Hook   string
 	Active bool
 	Err    bool
 }

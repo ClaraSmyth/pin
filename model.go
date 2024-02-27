@@ -120,13 +120,11 @@ func (m *Model) updateStyles() tea.Cmd {
 
 func (m *Model) updateKeys() tea.Cmd {
 	m.keys.FetchThemes.SetEnabled(false)
-	m.keys.Edit.SetEnabled(true)
 	m.keys.Copy.SetEnabled(false)
 
 	switch m.pane {
 	case themePane:
 		m.keys.FetchThemes.SetEnabled(true)
-		m.keys.Edit.SetEnabled(false)
 	case templatePane:
 		m.keys.Copy.SetEnabled(true)
 	}
@@ -246,6 +244,11 @@ func (m *Model) triggerForm(formAction FormAction) tea.Cmd {
 			formEdit = true
 			formName = item.Name
 			m.form = newForm(templateForm, m.lists[m.pane].Items(), m.styles.FormStyles)
+		case Theme:
+			formEdit = true
+			formName = item.Name
+			formHook = item.Hook
+			m.form = newForm(themeForm, m.lists[m.pane].Items(), m.styles.FormStyles)
 		default:
 			m.formActive = false
 			return nil
@@ -305,6 +308,12 @@ func (m *Model) handleFormSubmit() tea.Cmd {
 		switch m.formAction {
 		case formActionCreate:
 			return CreateTheme(m.form.GetString("name"), m.lists[themePane].Items())
+
+		case formActionEdit:
+			selectedTheme := m.lists[themePane].SelectedItem().(Theme)
+			newName := m.form.GetString("name")
+			newHook := m.form.GetString("hook")
+			return EditTheme(selectedTheme, newName, newHook)
 
 		case formActionDelete:
 			return DeleteTheme(m.lists[themePane].SelectedItem().(Theme))
