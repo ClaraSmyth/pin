@@ -13,6 +13,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type mapData struct {
+	Data map[string]App
+	mu   sync.Mutex
+}
+
 func ApplyThemeCmd(theme Theme) tea.Cmd {
 	return func() tea.Msg {
 		err := applyTheme(theme)
@@ -72,75 +77,95 @@ func applyTheme(theme Theme) error {
 		return err
 	}
 
-	for key, app := range appsMap {
-		if !app.Active || app.Path == "" || app.Template == "" {
-			app.Active = false
-			appsMap[key] = app
-			continue
-		}
-
-		templates, err := os.ReadDir(filepath.Join(config.Paths.Templates, app.Name))
-		if err != nil {
-			continue
-		}
-
-		var activeTemplatePath string
-
-		for _, template := range templates {
-			if filepath.Join(config.Paths.Templates, app.Name, template.Name()) == app.Template {
-				activeTemplatePath = app.Template
-			}
-
-			if strings.Split(template.Name(), ".")[0] == theme.Name {
-				activeTemplatePath = filepath.Join(config.Paths.Templates, app.Name, template.Name())
-				break
-			}
-		}
-
-		template, err := os.ReadFile(activeTemplatePath)
-		if err != nil {
-			app.Active = false
-			app.Template = ""
-			appsMap[key] = app
-			continue
-		}
-
-		data, err := builder.BuildTemplate(scheme, template)
-		if err != nil {
-			return err
-		}
-
-		if app.Rewrite {
-			err = os.WriteFile(app.Path, []byte(data), 0666)
-			if err != nil {
-				return err
-			}
-		}
-
-		if !app.Rewrite {
-			configFileData, err := os.ReadFile(app.Path)
-			if err != nil {
-				app.Active = false
-				app.Path = ""
-				appsMap[key] = app
-				continue
-			}
-
-			updatedData := insertTemplate(string(configFileData), config.InsertStart, config.InsertEnd, data)
-
-			err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), 0666)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	wg := sync.WaitGroup{}
 
-	if theme.Hook != "" {
+	data := mapData{Data: appsMap}
+
+	for key, app := range data.Data {
+
 		wg.Add(1)
-		go func() {
+
+		go func(key string, app App, data *mapData, wg *sync.WaitGroup) {
+
 			defer wg.Done()
+
+			if !app.Active || app.Path == "" || app.Template == "" {
+				app.Active = false
+				data.mu.Lock()
+				defer data.mu.Unlock()
+				data.Data[key] = app
+				return
+			}
+
+			templates, err := os.ReadDir(filepath.Join(config.Paths.Templates, app.Name))
+			if err != nil {
+				return
+			}
+
+			var activeTemplatePath string
+
+			for _, template := range templates {
+				if filepath.Join(config.Paths.Templates, app.Name, template.Name()) == app.Template {
+					activeTemplatePath = app.Template
+				}
+
+				if strings.Split(template.Name(), ".")[0] == theme.Name {
+					activeTemplatePath = filepath.Join(config.Paths.Templates, app.Name, template.Name())
+					break
+				}
+			}
+
+			template, err := os.ReadFile(activeTemplatePath)
+			if err != nil {
+				app.Active = false
+				app.Template = ""
+				data.mu.Lock()
+				defer data.mu.Unlock()
+				data.Data[key] = app
+				return
+			}
+
+			completeTemplate, err := builder.BuildTemplate(scheme, template)
+			if err != nil {
+				return
+			}
+
+			if app.Rewrite {
+				err = os.WriteFile(app.Path, []byte(completeTemplate), 0666)
+				if err != nil {
+					return
+				}
+			}
+
+			if !app.Rewrite {
+				configFileData, err := os.ReadFile(app.Path)
+				if err != nil {
+					app.Active = false
+					app.Path = ""
+					data.mu.Lock()
+					defer data.mu.Unlock()
+					data.Data[key] = app
+					return
+				}
+
+				updatedData := insertTemplate(string(configFileData), config.InsertStart, config.InsertEnd, completeTemplate)
+
+				err = os.WriteFile(app.Path, []byte(strings.TrimSpace(updatedData)), 0666)
+				if err != nil {
+					return
+				}
+			}
+		}(key, app, &data, &wg)
+	}
+
+	wg.Wait()
+
+	wg2 := sync.WaitGroup{}
+
+	if theme.Hook != "" {
+		wg2.Add(1)
+		go func() {
+			defer wg2.Done()
 			shellArgs := strings.Fields(config.DefaultShell)
 			cmdArgs := append(shellArgs, theme.Hook)
 
@@ -151,10 +176,10 @@ func applyTheme(theme Theme) error {
 
 	for _, app := range appsMap {
 		if app.Hook != "" {
-			wg.Add(1)
+			wg2.Add(1)
 
 			go func(hook string) {
-				defer wg.Done()
+				defer wg2.Done()
 
 				shellArgs := strings.Fields(config.DefaultShell)
 				cmdArgs := append(shellArgs, hook)
@@ -165,7 +190,7 @@ func applyTheme(theme Theme) error {
 		}
 	}
 
-	wg.Wait()
+	wg2.Wait()
 
 	err = os.WriteFile(config.Paths.ActiveTheme, []byte(theme.Path), 0666)
 	if err != nil {
