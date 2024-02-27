@@ -155,7 +155,7 @@ func (m *Model) selectItem() tea.Cmd {
 			items[i] = newItem
 		}
 
-		return tea.Batch(ApplyThemeCmd(selectedItem), m.lists[themePane].SetItems(items))
+		return tea.Batch(ApplyThemeCmd(selectedItem, items), m.lists[themePane].SetItems(items))
 	default:
 		return nil
 	}

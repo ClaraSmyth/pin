@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/ClaraSmyth/pin/builder"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"gopkg.in/yaml.v3"
 )
@@ -18,12 +19,11 @@ type mapData struct {
 	mu   sync.Mutex
 }
 
-func ApplyThemeCmd(theme Theme) tea.Cmd {
+func ApplyThemeCmd(theme Theme, themeList []list.Item) tea.Cmd {
 	return func() tea.Msg {
 		err := applyTheme(theme)
 
 		if err != nil {
-			themeList := GetThemes()
 			for i, item := range themeList {
 				if item.(Theme).Path == theme.Path {
 					theme.Err = true
