@@ -50,6 +50,9 @@ InsertStart: START_PIN_HERE
 
 #Change the default end string to search for when inserting templates
 InsertEnd: END_PIN_HERE
+
+# Change the default editor files will be opened in. By default pin will use $EDITOR env var or nano.
+# DefaultEditor: "nano"
 ```
 
 If you want to change where the config/data is stored by default you can do so with these env variables.
