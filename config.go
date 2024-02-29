@@ -11,10 +11,11 @@ import (
 )
 
 type Config struct {
-	DefaultShell string `yaml:"DefaultShell"`
-	InsertStart  string `yaml:"InsertStart"`
-	InsertEnd    string `yaml:"InsertEnd"`
-	Paths        Paths  `yaml:"-"`
+	DefaultShell  string `yaml:"DefaultShell"`
+	DefaultEditor string `yaml:"DefaultEditor"`
+	InsertStart   string `yaml:"InsertStart"`
+	InsertEnd     string `yaml:"InsertEnd"`
+	Paths         Paths  `yaml:"-"`
 }
 
 type Paths struct {
@@ -95,6 +96,9 @@ DefaultShell: sh -c
 # Change the default start string to search for when inserting templates
 InsertStart: START_PIN_HERE
 
-#Change the default end string to search for when inserting templates
+# Change the default end string to search for when inserting templates
 InsertEnd: END_PIN_HERE
+
+# Change the default editor files will be opened in. By default pin will use $EDITOR env var or nano.
+# DefaultEditor: "nano"
 `
